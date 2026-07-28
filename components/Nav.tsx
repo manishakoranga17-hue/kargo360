@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { nav } from "@/lib/content";
 import Magnetic from "./Magnetic";
+import { withBase } from "@/lib/asset";
 import clsx from "clsx";
 
 export default function Nav() {
@@ -43,7 +44,7 @@ export default function Nav() {
       >
         <Link href="/" className="group flex items-center" aria-label="Kargo360 home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.webp" alt="Kargo360" className="h-7 w-auto md:h-8" />
+          <img src={withBase("/logo.webp")} alt="Kargo360" className="h-7 w-auto md:h-8" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

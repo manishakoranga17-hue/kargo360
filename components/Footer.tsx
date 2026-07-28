@@ -7,6 +7,7 @@ import { registerGsap, gsap, prefersReducedMotion } from "@/lib/gsap";
 import RevealText from "./RevealText";
 import Magnetic from "./Magnetic";
 import HexFloor from "./HexFloor";
+import { withBase } from "@/lib/asset";
 
 /**
  * Closer + footer — giant centered call-to-action over a glowing 3D hex-tile
@@ -104,7 +105,7 @@ export default function Footer() {
             <div>
               <Link href="/" className="inline-flex items-center" aria-label="Kargo360 home">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.webp" alt="Kargo360" className="h-8 w-auto" />
+                <img src={withBase("/logo.webp")} alt="Kargo360" className="h-8 w-auto" />
               </Link>
               <p className="mt-5 max-w-xs text-sm leading-relaxed text-mist">
                 {footer.contact.address}

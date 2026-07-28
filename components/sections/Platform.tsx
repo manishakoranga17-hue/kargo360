@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { registerGsap, gsap, prefersReducedMotion } from "@/lib/gsap";
 import RevealText from "@/components/RevealText";
 import Magnetic from "@/components/Magnetic";
+import { withBase } from "@/lib/asset";
 
 /**
  * Dashboard showcase — the Kargo360 ERP in one glance. Center browser frame
@@ -175,7 +176,7 @@ export default function Platform() {
               {/* sidebar */}
               <div className="hidden w-40 shrink-0 border-r border-mist-line p-4 md:block">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo.webp" alt="" className="mb-6 h-5 w-auto" />
+                <img src={withBase("/logo.webp")} alt="" className="mb-6 h-5 w-auto" />
                 {["Dashboard", "Shipments", "Bookings", "Tracking", "Rates", "Reports"].map((item, i) => (
                   <div
                     key={item}
