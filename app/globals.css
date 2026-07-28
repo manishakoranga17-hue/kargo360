@@ -1,0 +1,234 @@
+@import url("https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600,700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --shell-px: clamp(1.25rem, 5vw, 6rem);
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  html {
+    scroll-behavior: auto; /* Lenis owns scrolling */
+  }
+
+  body {
+    @apply bg-ink text-mist-bright font-sans;
+    overflow-x: hidden;
+    font-weight: 400;
+  }
+
+  ::selection {
+    background: #ff0a22;
+    color: #fff;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tightest;
+    font-weight: 500;
+    text-wrap: balance;
+  }
+
+  /* Lenis */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .shell {
+    width: 100%;
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: var(--shell-px);
+  }
+
+  /* clean uppercase label instead of a mono eyebrow — matches doss restraint */
+  .eyebrow {
+    @apply text-[0.72rem] font-medium uppercase tracking-widest2 text-mist;
+  }
+
+  .text-signal {
+    background: linear-gradient(120deg, #ff2f45 0%, #ff0a22 60%, #c8001b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hairline {
+    @apply border-t border-mist-line;
+  }
+
+  /* primary — solid brand red, crisp (not a rainbow) */
+  .btn-signal {
+    @apply relative inline-flex items-center gap-2.5 rounded-full px-6 py-3
+           text-[0.95rem] font-medium text-white overflow-hidden isolate;
+    background: #ff0a22;
+    transition: background 0.35s ease, transform 0.35s ease;
+  }
+  .btn-signal:hover {
+    background: #ff2f45;
+  }
+
+  /* light pill — doss-style high-contrast cream button */
+  .btn-paper {
+    @apply inline-flex items-center gap-2.5 rounded-full bg-paper px-6 py-3
+           text-[0.95rem] font-medium text-ink-900 transition-colors duration-300;
+  }
+  .btn-paper:hover {
+    @apply bg-white;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2.5 rounded-full border border-mist-line
+           px-6 py-3 text-[0.95rem] font-medium text-mist-bright transition-colors duration-300;
+  }
+  .btn-ghost:hover {
+    @apply border-signal-red text-white;
+  }
+
+  .panel {
+    @apply relative rounded-xl border border-mist-line bg-ink-800/50
+           transition-all duration-500;
+  }
+  .panel:hover {
+    @apply border-mist-dim;
+  }
+}
+
+@layer utilities {
+  /* isometric-friendly faint grid */
+  .grid-lines {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 72px 72px;
+  }
+  /* subtle ambient drift — one grid cell per loop, seamless */
+  .grid-drift {
+    animation: grid-drift 36s linear infinite;
+  }
+  @keyframes grid-drift {
+    from { background-position: 0 0; }
+    to { background-position: 88px 0; }
+  }
+
+  /* ===== hex floor (bipsync-style closer) ===== */
+  /* honeycomb line pattern, tiles seamlessly at 90x52 */
+  .hex-lines {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='52' viewBox='0 0 90 52'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.09' stroke-width='1.5'%3E%3Cpolygon points='30,0 15,-26 -15,-26 -30,0 -15,26 15,26'/%3E%3Cpolygon points='120,0 105,-26 75,-26 60,0 75,26 105,26'/%3E%3Cpolygon points='75,26 60,0 30,0 15,26 30,52 60,52'/%3E%3Cpolygon points='30,52 15,26 -15,26 -30,52 -15,78 15,78'/%3E%3Cpolygon points='120,52 105,26 75,26 60,52 75,78 105,78'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 90px 52px;
+  }
+  /* same honeycomb as a mask — light shows only along the tile lines */
+  .hex-mask {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='52' viewBox='0 0 90 52'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='2'%3E%3Cpolygon points='30,0 15,-26 -15,-26 -30,0 -15,26 15,26'/%3E%3Cpolygon points='120,0 105,-26 75,-26 60,0 75,26 105,26'/%3E%3Cpolygon points='75,26 60,0 30,0 15,26 30,52 60,52'/%3E%3Cpolygon points='30,52 15,26 -15,26 -30,52 -15,78 15,78'/%3E%3Cpolygon points='120,52 105,26 75,26 60,52 75,78 105,78'/%3E%3C/g%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='52' viewBox='0 0 90 52'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='2'%3E%3Cpolygon points='30,0 15,-26 -15,-26 -30,0 -15,26 15,26'/%3E%3Cpolygon points='120,0 105,-26 75,-26 60,0 75,26 105,26'/%3E%3Cpolygon points='75,26 60,0 30,0 15,26 30,52 60,52'/%3E%3Cpolygon points='30,52 15,26 -15,26 -30,52 -15,78 15,78'/%3E%3Cpolygon points='120,52 105,26 75,26 60,52 75,78 105,78'/%3E%3C/g%3E%3C/svg%3E");
+    -webkit-mask-size: 90px 52px;
+    mask-size: 90px 52px;
+    -webkit-mask-repeat: repeat;
+    mask-repeat: repeat;
+  }
+  /* perspective tilt for the floor plane — children live in 3D */
+  .hex-tilt {
+    transform: perspective(1000px) rotateX(56deg) scale(1.15);
+    transform-origin: 50% 0%;
+    transform-style: preserve-3d;
+  }
+
+  /* filled 3D tile — floats up and down on its own rhythm */
+  .hex-tile {
+    position: absolute;
+    clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+    background: rgba(255, 255, 255, 0.09); /* rim line */
+    transform: translateZ(var(--tzb, 0px));
+    animation: tile-float var(--dur, 7s) ease-in-out var(--delay, 0s) infinite;
+    will-change: transform;
+  }
+  .hex-tile-face {
+    position: absolute;
+    inset: 1.5px;
+    clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  }
+  @keyframes tile-float {
+    0%, 100% { transform: translateZ(var(--tzb, 0px)); }
+    50% { transform: translateZ(calc(var(--tzb, 0px) + var(--tza, 18px))); }
+  }
+  /* drifting red light blobs that sweep the floor */
+  .hex-blob {
+    position: absolute;
+    width: 46%;
+    height: 55%;
+    border-radius: 9999px;
+    filter: blur(70px);
+    will-change: transform;
+  }
+  .hex-blob-a {
+    background: rgba(255, 10, 34, 0.75);
+    animation: hex-blob-a 16s ease-in-out infinite;
+  }
+  .hex-blob-b {
+    background: rgba(255, 47, 69, 0.55);
+    animation: hex-blob-b 20s ease-in-out infinite;
+  }
+  .hex-blob-c {
+    background: rgba(200, 0, 27, 0.6);
+    animation: hex-blob-c 24s ease-in-out infinite;
+  }
+  @keyframes hex-blob-a {
+    0%, 100% { transform: translate(-10%, 30%); }
+    50% { transform: translate(130%, -5%); }
+  }
+  @keyframes hex-blob-b {
+    0%, 100% { transform: translate(150%, -10%); }
+    50% { transform: translate(20%, 55%); }
+  }
+  @keyframes hex-blob-c {
+    0%, 100% { transform: translate(60%, 70%); }
+    50% { transform: translate(80%, -15%); }
+  }
+
+  .grid-lines-dark {
+    background-image:
+      linear-gradient(to right, rgba(12, 12, 14, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(12, 12, 14, 0.05) 1px, transparent 1px);
+    background-size: 72px 72px;
+  }
+  .radial-fade {
+    -webkit-mask-image: radial-gradient(ellipse 75% 65% at 60% 45%, #000 45%, transparent 100%);
+    mask-image: radial-gradient(ellipse 75% 65% at 60% 45%, #000 45%, transparent 100%);
+  }
+  .noise {
+    position: relative;
+  }
+  .noise::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
