@@ -48,6 +48,8 @@ export default function Hero() {
         <div className="absolute inset-0 grid-lines opacity-20" />
         <div className="absolute inset-0 grid-lines opacity-60 [mask-image:radial-gradient(ellipse_52%_46%_at_50%_60%,#000_10%,transparent_75%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_105%_at_50%_45%,transparent_55%,rgba(10,10,12,0.9)_100%)]" />
+        {/* spotlight pool behind the headline */}
+        <div className="absolute inset-x-0 top-0 h-[460px] bg-[radial-gradient(ellipse_44%_62%_at_50%_40%,rgba(255,255,255,0.07),transparent_70%)]" />
       </div>
 
       {/* side circuit gutters with traveling red pulses */}
@@ -71,7 +73,7 @@ export default function Hero() {
         </div>
 
         {/* headline */}
-        <h1 className="mx-auto max-w-[18ch] text-[clamp(2.7rem,6.6vw,5.8rem)] font-medium leading-[1.02] tracking-tightest">
+        <h1 className="heading-glow mx-auto max-w-[18ch] text-[clamp(2.7rem,6.6vw,5.8rem)] font-medium leading-[1.02] tracking-tightest">
           <Line>
             <span className="heading-shine">{hero.headlineLead}</span>
           </Line>

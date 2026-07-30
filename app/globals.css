@@ -82,6 +82,17 @@
     color: transparent;
   }
 
+  /* luminous bloom for big headings.
+     IMPORTANT: apply to a WRAPPER of .heading-shine / .text-signal, never to
+     the clipped element itself — filter + background-clip:text on the same
+     element breaks the clip and paints the gradient as a full box. */
+  .heading-glow {
+    filter: drop-shadow(0 1px 10px rgba(255, 255, 255, 0.16)) drop-shadow(0 0 34px rgba(255, 255, 255, 0.12));
+  }
+  .text-signal-glow {
+    filter: drop-shadow(0 2px 14px rgba(255, 10, 34, 0.35)) drop-shadow(0 0 44px rgba(255, 10, 34, 0.22));
+  }
+
   /* centered eyebrow flanked by hairlines that fade out */
   .eyebrow-lines {
     @apply flex items-center justify-center gap-4;

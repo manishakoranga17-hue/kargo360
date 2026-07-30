@@ -82,12 +82,16 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
 
           <div className="relative inline-block px-4">
             <Ticks />
-            <h1 className="mx-auto max-w-[18ch] text-[clamp(2.4rem,6.6vw,5.4rem)] font-semibold leading-[0.98]">
+            <h1 className="heading-glow mx-auto max-w-[18ch] text-[clamp(2.4rem,6.6vw,5.4rem)] font-semibold leading-[0.98]">
               <span data-pline className="-mb-[0.15em] block overflow-hidden pb-[0.15em]">
-                <span className="heading-shine block will-change-transform">{headLead}</span>
+                <span className="block will-change-transform">
+                  <span className="heading-shine">{headLead}</span>
+                </span>
               </span>
               <span data-pline className="-mb-[0.15em] block overflow-hidden pb-[0.15em]">
-                <span className="block will-change-transform text-signal">{headAccent}</span>
+                <span className="block will-change-transform">
+                  <span className="text-signal">{headAccent}</span>
+                </span>
               </span>
             </h1>
           </div>
@@ -168,8 +172,8 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-signal-red" />
                 // The old way
               </div>
-              <h2 className="heading-shine text-3xl leading-[1.08] sm:text-4xl md:text-5xl">
-                {solution.pains.heading}
+              <h2 className="heading-glow text-3xl leading-[1.08] sm:text-4xl md:text-5xl">
+                <span className="heading-shine">{solution.pains.heading}</span>
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-mist">
                 {solution.pains.intro}
@@ -217,7 +221,7 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-signal-red animate-blink" />
                 // How we solve it
               </div>
-              <h2 className="text-3xl leading-[1.05] sm:text-4xl md:text-5xl">
+              <h2 className="text-signal-glow text-3xl leading-[1.05] sm:text-4xl md:text-5xl">
                 <span className="text-signal">{solution.fixes.heading}</span>
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-mist">
@@ -291,8 +295,8 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-signal-red animate-blink" />
                 // Mission control
               </div>
-              <h2 className="heading-shine text-3xl leading-[1.08] sm:text-4xl md:text-5xl">
-                {solution.dashboard.heading}
+              <h2 className="heading-glow text-3xl leading-[1.08] sm:text-4xl md:text-5xl">
+                <span className="heading-shine">{solution.dashboard.heading}</span>
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-mist">
                 {solution.dashboard.intro}
@@ -318,8 +322,8 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-signal-red" />
                 // The GSA model
               </div>
-              <h2 className="heading-shine text-3xl leading-[1.08] sm:text-4xl md:text-5xl">
-                {solution.model.heading}
+              <h2 className="heading-glow text-3xl leading-[1.08] sm:text-4xl md:text-5xl">
+                <span className="heading-shine">{solution.model.heading}</span>
               </h2>
               <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-mist">
                 {solution.model.intro}
