@@ -1,11 +1,15 @@
 "use client";
 
+import { useRef } from "react";
 import { stakeholders } from "@/lib/content";
+import { useAnimGate } from "@/lib/useAnimGate";
 
 export default function Marquee() {
+  const root = useRef<HTMLElement>(null);
+  useAnimGate(root);
   const row = [...stakeholders, ...stakeholders];
   return (
-    <section className="relative overflow-hidden bg-paper py-7 text-ink-900">
+    <section ref={root} className="relative overflow-hidden bg-paper py-7 text-ink-900">
       <div className="pointer-events-none absolute inset-0 grid-lines-dark opacity-60" />
       <div className="shell relative mb-5 flex items-center justify-between">
         <span className="eyebrow !text-ink-900/50">// Connecting every stakeholder</span>

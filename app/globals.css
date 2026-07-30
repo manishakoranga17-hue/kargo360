@@ -72,6 +72,45 @@
     @apply border-t border-mist-line;
   }
 
+  /* ===== section devices (authkit-style pools of light) ===== */
+
+  /* white→silver shine on big headings so they lift off the dark bg */
+  .heading-shine {
+    background: linear-gradient(180deg, #ffffff 0%, #e3e3ea 48%, #94949f 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* centered eyebrow flanked by hairlines that fade out */
+  .eyebrow-lines {
+    @apply flex items-center justify-center gap-4;
+  }
+  .eyebrow-lines::before,
+  .eyebrow-lines::after {
+    content: "";
+    height: 1px;
+    width: clamp(36px, 8vw, 96px);
+    flex: none;
+  }
+  .eyebrow-lines::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22));
+  }
+  .eyebrow-lines::after {
+    background: linear-gradient(270deg, transparent, rgba(255, 255, 255, 0.22));
+  }
+
+  /* blueprint corner tick (a small +). Position with -top/-left utilities. */
+  .tick {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    pointer-events: none;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)) center / 1px 100% no-repeat,
+      linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)) center / 100% 1px no-repeat;
+  }
+
   /* primary — solid brand red, crisp (not a rainbow) */
   .btn-signal {
     @apply relative inline-flex items-center gap-2.5 rounded-full px-6 py-3
@@ -100,12 +139,36 @@
     @apply border-signal-red text-white;
   }
 
+  /* glass card — frosted fill, bright top edge-light, deep elevation (authkit-style) */
   .panel {
-    @apply relative rounded-xl border border-mist-line bg-ink-800/50
-           transition-all duration-500;
+    @apply relative rounded-2xl transition-all duration-500;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0.03) 35%,
+      rgba(255, 255, 255, 0.015) 100%
+    );
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 2px 4px rgba(0, 0, 0, 0.35),
+      0 28px 64px -20px rgba(0, 0, 0, 0.8);
   }
   .panel:hover {
-    @apply border-mist-dim;
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.095) 0%,
+      rgba(255, 255, 255, 0.04) 38%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      0 2px 4px rgba(0, 0, 0, 0.35),
+      0 36px 72px -20px rgba(0, 0, 0, 0.85),
+      0 0 52px -18px rgba(255, 10, 34, 0.25);
   }
 }
 
@@ -117,13 +180,10 @@
       linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 72px 72px;
   }
-  /* subtle ambient drift — one grid cell per loop, seamless */
+  /* drift disabled: animating background-position repaints the full layer
+     every frame (not compositable) and caused visible flicker */
   .grid-drift {
-    animation: grid-drift 36s linear infinite;
-  }
-  @keyframes grid-drift {
-    from { background-position: 0 0; }
-    to { background-position: 88px 0; }
+    background-position: 0 0;
   }
 
   /* ===== hex floor (bipsync-style closer) ===== */
@@ -148,14 +208,15 @@
     transform-style: preserve-3d;
   }
 
-  /* filled 3D tile — floats up and down on its own rhythm */
+  /* filled 3D tile — floats up and down on its own rhythm.
+     NOTE: no will-change here — 180 tiles × forced layers thrashed GPU
+     memory and caused page-wide flicker. */
   .hex-tile {
     position: absolute;
     clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
     background: rgba(255, 255, 255, 0.09); /* rim line */
     transform: translateZ(var(--tzb, 0px));
     animation: tile-float var(--dur, 7s) ease-in-out var(--delay, 0s) infinite;
-    will-change: transform;
   }
   .hex-tile-face {
     position: absolute;
@@ -210,6 +271,60 @@
     -webkit-mask-image: radial-gradient(ellipse 75% 65% at 60% 45%, #000 45%, transparent 100%);
     mask-image: radial-gradient(ellipse 75% 65% at 60% 45%, #000 45%, transparent 100%);
   }
+  /* hero energy waves — soft red silk drifting at the base of the hero */
+  .hero-wave {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 9999px;
+    filter: blur(90px);
+    will-change: transform;
+    mix-blend-mode: screen;
+  }
+  .hero-wave-a {
+    left: -12%;
+    bottom: -18%;
+    width: 58%;
+    height: 60%;
+    background: radial-gradient(ellipse at center, rgba(255, 10, 34, 0.30), transparent 70%);
+    animation: hero-wave-a 22s ease-in-out infinite;
+  }
+  .hero-wave-b {
+    right: -14%;
+    bottom: -20%;
+    width: 62%;
+    height: 64%;
+    background: radial-gradient(ellipse at center, rgba(200, 0, 27, 0.26), transparent 70%);
+    animation: hero-wave-b 26s ease-in-out infinite;
+  }
+  .hero-wave-c {
+    left: 28%;
+    bottom: -30%;
+    width: 46%;
+    height: 55%;
+    background: radial-gradient(ellipse at center, rgba(255, 47, 69, 0.17), transparent 70%);
+    animation: hero-wave-c 19s ease-in-out infinite;
+  }
+  @keyframes hero-wave-a {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(7%, -9%); }
+  }
+  @keyframes hero-wave-b {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-8%, -6%); }
+  }
+  @keyframes hero-wave-c {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(4%, -12%) scale(1.08); }
+  }
+
+  /* set by lib/useAnimGate.ts while a section is off-screen */
+  .anims-paused,
+  .anims-paused *,
+  .anims-paused *::before,
+  .anims-paused *::after {
+    animation-play-state: paused !important;
+  }
+
   .noise {
     position: relative;
   }

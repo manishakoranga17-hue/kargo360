@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { registerGsap, gsap, prefersReducedMotion } from "@/lib/gsap";
+import { registerGsap, gsap, prefersReducedMotion, pauseOffscreen } from "@/lib/gsap";
 
 /**
  * Hero visual — the end-to-end air cargo journey, tracked live:
@@ -108,34 +108,42 @@ export default function IsometricScene() {
         .to(plane, { opacity: 1, duration: 0.5, ease: "power2.out" }, "-=0.8")
         .to(labels, { opacity: 1, duration: 0.5, stagger: 0.08 }, "-=0.6");
 
+      const loops: gsap.core.Tween[] = [];
+
       // live shipment pulse traveling the entire route, forever
       if (pulse && measure) {
         const len = measure.getTotalLength();
         const trip = { t: 0 };
         gsap.set(pulse, { opacity: 0 });
         tl.to(pulse, { opacity: 1, duration: 0.3 });
-        gsap.to(trip, {
-          t: 1,
-          duration: 8,
-          ease: "power1.inOut",
-          repeat: -1,
-          repeatDelay: 0.5,
-          delay: 2.4,
-          onUpdate: () => {
-            const p = measure.getPointAtLength(trip.t * len);
-            gsap.set(pulse, { attr: { transform: `translate(${p.x},${p.y})` } });
-          },
-        });
+        loops.push(
+          gsap.to(trip, {
+            t: 1,
+            duration: 8,
+            ease: "power1.inOut",
+            repeat: -1,
+            repeatDelay: 0.5,
+            delay: 2.4,
+            onUpdate: () => {
+              const p = measure.getPointAtLength(trip.t * len);
+              gsap.set(pulse, { attr: { transform: `translate(${p.x},${p.y})` } });
+            },
+          })
+        );
       }
 
       // checkpoint pings — expanding rings, staggered (radius-based: stays anchored)
       pings.forEach((ring, i) => {
-        gsap.fromTo(
-          ring,
-          { attr: { r: 4 }, opacity: 0.6 },
-          { attr: { r: 26 }, opacity: 0, duration: 1.8, repeat: -1, repeatDelay: 1.2, ease: "power1.out", delay: 2 + i * 0.5 }
+        loops.push(
+          gsap.fromTo(
+            ring,
+            { attr: { r: 4 }, opacity: 0.6 },
+            { attr: { r: 26 }, opacity: 0, duration: 1.8, repeat: -1, repeatDelay: 1.2, ease: "power1.out", delay: 2 + i * 0.5 }
+          )
         );
       });
+
+      pauseOffscreen(el, loops);
 
       // gentle drift as the hero scrolls out
       gsap.to("[data-j-world]", {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { registerGsap, gsap, prefersReducedMotion } from "@/lib/gsap";
+import { registerGsap, gsap, prefersReducedMotion, pauseOffscreen } from "@/lib/gsap";
 import RevealText from "@/components/RevealText";
 import Magnetic from "@/components/Magnetic";
 import { withBase } from "@/lib/asset";
@@ -110,15 +110,17 @@ export default function Platform() {
         );
 
       // live wiggle on the chart bars
-      gsap.to(el.querySelectorAll("[data-p-bar]"), {
-        scaleY: () => 0.85 + Math.random() * 0.3,
-        transformOrigin: "bottom",
-        duration: 2.2,
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut",
-        stagger: 0.15,
-      });
+      pauseOffscreen(el, [
+        gsap.to(el.querySelectorAll("[data-p-bar]"), {
+          scaleY: () => 0.85 + Math.random() * 0.3,
+          transformOrigin: "bottom",
+          duration: 2.2,
+          yoyo: true,
+          repeat: -1,
+          ease: "sine.inOut",
+          stagger: 0.15,
+        }),
+      ]);
     }, el);
 
     return () => ctx.revert();
@@ -262,7 +264,7 @@ export default function Platform() {
           {/* soft red floor glow */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -bottom-10 left-1/2 h-28 w-[70%] -translate-x-1/2 rounded-full blur-[80px]"
+            className="pointer-events-none absolute -bottom-10 left-1/2 h-28 w-[70%] -translate-x-1/2 rounded-full blur-[80px] will-change-transform"
             style={{ background: "rgba(255,10,34,0.12)" }}
           />
         </div>

@@ -9,7 +9,7 @@ import clsx from "clsx";
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false); // products dropdown
+  const [open, setOpen] = useState<"products" | "solutions" | null>(null);
   const [mobile, setMobile] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -20,10 +20,10 @@ export default function Nav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const hover = (v: boolean) => {
+  const hover = (menu: "products" | "solutions", v: boolean) => {
     clearTimeout(closeTimer.current);
-    if (v) setOpen(true);
-    else closeTimer.current = setTimeout(() => setOpen(false), 140);
+    if (v) setOpen(menu);
+    else closeTimer.current = setTimeout(() => setOpen(null), 140);
   };
 
   return (
@@ -37,7 +37,7 @@ export default function Nav() {
         className={clsx(
           "shell flex items-center justify-between rounded-full border transition-all duration-500",
           scrolled
-            ? "border-mist-line bg-ink-900/90 py-2.5 backdrop-blur-xl"
+            ? "border-mist-line bg-ink-900/95 py-2.5"
             : "border-transparent"
         )}
         style={scrolled ? { maxWidth: 1180 } : undefined}
@@ -50,22 +50,22 @@ export default function Nav() {
         <nav className="hidden items-center gap-1 md:flex">
           <div
             className="relative"
-            onMouseEnter={() => hover(true)}
-            onMouseLeave={() => hover(false)}
+            onMouseEnter={() => hover("products", true)}
+            onMouseLeave={() => hover("products", false)}
           >
             <button className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-mist-bright transition-colors hover:text-white">
               Products
-              <svg width="10" height="10" viewBox="0 0 10 10" className={clsx("transition-transform", open && "rotate-180")}>
+              <svg width="10" height="10" viewBox="0 0 10 10" className={clsx("transition-transform", open === "products" && "rotate-180")}>
                 <path d="M1 3l4 4 4-4" stroke="currentColor" strokeWidth="1.4" fill="none" />
               </svg>
             </button>
             <div
               className={clsx(
                 "absolute left-1/2 top-full w-[440px] -translate-x-1/2 pt-3 transition-all duration-300",
-                open ? "visible opacity-100" : "invisible -translate-y-1 opacity-0"
+                open === "products" ? "visible opacity-100" : "invisible -translate-y-1 opacity-0"
               )}
             >
-              <div className="grid grid-cols-2 gap-1 rounded-2xl border border-mist-line bg-ink-800/95 p-2 backdrop-blur-xl">
+              <div className="grid grid-cols-2 gap-1 rounded-2xl border border-mist-line bg-ink-800 p-2">
                 {nav.products.map((p) => (
                   <Link
                     key={p.href}
@@ -75,6 +75,40 @@ export default function Nav() {
                     <div className="font-display text-[0.95rem] text-white">{p.label}</div>
                     <div className="mt-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-mist">
                       {p.scope}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="relative"
+            onMouseEnter={() => hover("solutions", true)}
+            onMouseLeave={() => hover("solutions", false)}
+          >
+            <button className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm text-mist-bright transition-colors hover:text-white">
+              Solutions
+              <svg width="10" height="10" viewBox="0 0 10 10" className={clsx("transition-transform", open === "solutions" && "rotate-180")}>
+                <path d="M1 3l4 4 4-4" stroke="currentColor" strokeWidth="1.4" fill="none" />
+              </svg>
+            </button>
+            <div
+              className={clsx(
+                "absolute left-1/2 top-full w-[280px] -translate-x-1/2 pt-3 transition-all duration-300",
+                open === "solutions" ? "visible opacity-100" : "invisible -translate-y-1 opacity-0"
+              )}
+            >
+              <div className="grid gap-1 rounded-2xl border border-mist-line bg-ink-800 p-2">
+                {nav.solutions.map((s) => (
+                  <Link
+                    key={s.href}
+                    href={s.href}
+                    className="group rounded-xl p-3 transition-colors hover:bg-ink-600"
+                  >
+                    <div className="font-display text-[0.95rem] text-white">{s.label}</div>
+                    <div className="mt-0.5 font-mono text-[0.65rem] uppercase tracking-widest text-mist">
+                      {s.scope}
                     </div>
                   </Link>
                 ))}
@@ -116,10 +150,10 @@ export default function Nav() {
       <div
         className={clsx(
           "shell overflow-hidden transition-all duration-500 md:hidden",
-          mobile ? "mt-3 max-h-[520px]" : "max-h-0"
+          mobile ? "mt-3 max-h-[680px]" : "max-h-0"
         )}
       >
-        <div className="rounded-2xl border border-mist-line bg-ink-800/95 p-4 backdrop-blur-xl">
+        <div className="rounded-2xl border border-mist-line bg-ink-800 p-4">
           <div className="eyebrow mb-2">Products</div>
           {nav.products.map((p) => (
             <Link
@@ -130,6 +164,18 @@ export default function Nav() {
             >
               <span className="font-display text-white">{p.label}</span>
               <span className="font-mono text-[0.6rem] uppercase tracking-widest text-mist">{p.scope}</span>
+            </Link>
+          ))}
+          <div className="eyebrow mb-2 mt-5">Solutions</div>
+          {nav.solutions.map((s) => (
+            <Link
+              key={s.href}
+              href={s.href}
+              onClick={() => setMobile(false)}
+              className="flex items-center justify-between border-b border-mist-line py-3 last:border-0"
+            >
+              <span className="font-display text-white">{s.label}</span>
+              <span className="font-mono text-[0.6rem] uppercase tracking-widest text-mist">{s.scope}</span>
             </Link>
           ))}
           <Link href="#contact" onClick={() => setMobile(false)} className="btn-signal mt-4 w-full justify-center">

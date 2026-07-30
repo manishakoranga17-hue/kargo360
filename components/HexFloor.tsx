@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
+import { useAnimGate } from "@/lib/useAnimGate";
 
 /**
  * 3D honeycomb floor — filled extruded tiles floating at different heights,
@@ -19,6 +20,8 @@ const CANVAS_W = COLS * STEP_X + W * 0.25;
 const CANVAS_H = ROWS * H + H / 2;
 
 export default function HexFloor() {
+  const root = useRef<HTMLDivElement>(null);
+  useAnimGate(root);
   const tiles = useMemo(() => {
     const out: {
       left: number; top: number; kind: "hot" | "tint" | "base";
@@ -54,7 +57,7 @@ export default function HexFloor() {
         : "linear-gradient(160deg, #1d1d22 0%, #121216 55%, #0c0c0e 100%)";
 
   return (
-    <div className="hex-tilt absolute -left-[15%] top-0 h-[135%] w-[130%]">
+    <div ref={root} className="hex-tilt absolute -left-[15%] top-0 h-[135%] w-[130%]">
       {/* tile canvas, centered */}
       <div
         className="absolute left-1/2 top-1/2"

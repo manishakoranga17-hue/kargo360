@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { registerGsap, gsap, prefersReducedMotion } from "@/lib/gsap";
+import { registerGsap, gsap, prefersReducedMotion, pauseOffscreen } from "@/lib/gsap";
 import clsx from "clsx";
 
 /**
@@ -38,7 +38,9 @@ export default function IsoMotif({
         scrollTrigger: { trigger: el, start: "top 90%", once: true },
       });
       if (variant === "ring") {
-        gsap.to("[data-spin]", { rotate: 360, transformOrigin: "center", duration: 14, repeat: -1, ease: "none" });
+        pauseOffscreen(el, [
+          gsap.to("[data-spin]", { rotate: 360, transformOrigin: "center", duration: 14, repeat: -1, ease: "none" }),
+        ]);
       }
     }, el);
     return () => ctx.revert();

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { stakeholders } from "@/lib/content";
-import { registerGsap, gsap, prefersReducedMotion } from "@/lib/gsap";
+import { registerGsap, gsap, prefersReducedMotion, pauseOffscreen } from "@/lib/gsap";
 
 /**
  * "Atom" diagram — central Kargo360 cube with three intersecting orbit
@@ -156,24 +156,30 @@ export default function StakeholderAtom({ light = false }: { light?: boolean }) 
         )
         .fromTo(dots, { opacity: 0 }, { opacity: 1, duration: 0.4 }, "-=0.2");
 
+      const loops: gsap.core.Tween[] = [];
+
       // continuous — nodes traveling each orbit
       dots.forEach((dot, i) => {
         const state = { t: (i * Math.PI * 2) / 3 };
-        gsap.to(state, {
-          t: `+=${Math.PI * 2}`,
-          duration: 16 + i * 3,
-          repeat: -1,
-          ease: "none",
-          onUpdate: () => {
-            const [x, y] = orbitPoint(state.t, ROTS[i]);
-            dot.setAttribute("cx", String(x));
-            dot.setAttribute("cy", String(y));
-          },
-        });
+        loops.push(
+          gsap.to(state, {
+            t: `+=${Math.PI * 2}`,
+            duration: 16 + i * 3,
+            repeat: -1,
+            ease: "none",
+            onUpdate: () => {
+              const [x, y] = orbitPoint(state.t, ROTS[i]);
+              dot.setAttribute("cx", String(x));
+              dot.setAttribute("cy", String(y));
+            },
+          })
+        );
       });
 
       // gentle cube float
-      gsap.to(cube, { y: -8, duration: 3.4, yoyo: true, repeat: -1, ease: "sine.inOut" });
+      loops.push(gsap.to(cube, { y: -8, duration: 3.4, yoyo: true, repeat: -1, ease: "sine.inOut" }));
+
+      pauseOffscreen(el, loops);
     }, el);
 
     return () => ctx.revert();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { registerGsap, gsap, prefersReducedMotion } from "@/lib/gsap";
+import { registerGsap, gsap, prefersReducedMotion, pauseOffscreen } from "@/lib/gsap";
 
 /**
  * Distinct animated isometric graphic per product (red/black), swapped by the
@@ -58,15 +58,19 @@ export default function ProductGraphic({ type }: { type: "scape" | "kommerce" | 
         ease: "power3.out",
         scrollTrigger: { trigger: el, start: "top 80%", once: true },
       });
+      const loops: gsap.core.Tween[] = [];
+
       // float
-      gsap.to(el.querySelectorAll("[data-float]"), {
-        y: "-=8",
-        duration: 3,
-        ease: "sine.inOut",
-        yoyo: true,
-        repeat: -1,
-        stagger: { each: 0.4, from: "random" },
-      });
+      loops.push(
+        gsap.to(el.querySelectorAll("[data-float]"), {
+          y: "-=8",
+          duration: 3,
+          ease: "sine.inOut",
+          yoyo: true,
+          repeat: -1,
+          stagger: { each: 0.4, from: "random" },
+        })
+      );
       // traveling pulses along paths
       el.querySelectorAll<SVGPathElement>("[data-route]").forEach((path, i) => {
         const dot = el.querySelector<SVGGElement>(`[data-pulse="${i}"]`);
@@ -80,22 +84,28 @@ export default function ProductGraphic({ type }: { type: "scape" | "kommerce" | 
         });
         if (dot) {
           const trip = { t: 0 };
-          gsap.to(trip, {
-            t: 1, duration: 4, ease: "power1.inOut", repeat: -1, repeatDelay: 0.4, delay: 1 + i * 0.3,
-            onUpdate: () => {
-              const p = path.getPointAtLength(trip.t * len);
-              gsap.set(dot, { attr: { transform: `translate(${p.x},${p.y})` } });
-            },
-          });
+          loops.push(
+            gsap.to(trip, {
+              t: 1, duration: 4, ease: "power1.inOut", repeat: -1, repeatDelay: 0.4, delay: 1 + i * 0.3,
+              onUpdate: () => {
+                const p = path.getPointAtLength(trip.t * len);
+                gsap.set(dot, { attr: { transform: `translate(${p.x},${p.y})` } });
+              },
+            })
+          );
         }
       });
       // spinning / pulsing accents
-      gsap.to(el.querySelectorAll("[data-spin]"), { rotate: 360, transformOrigin: "center", duration: 16, repeat: -1, ease: "none" });
-      gsap.to(el.querySelectorAll("[data-bar]"), {
-        scaleY: (i) => 0.4 + ((i % 3) * 0.25),
-        transformOrigin: "bottom",
-        duration: 1.1, yoyo: true, repeat: -1, ease: "sine.inOut", stagger: 0.12,
-      });
+      loops.push(
+        gsap.to(el.querySelectorAll("[data-spin]"), { rotate: 360, transformOrigin: "center", duration: 16, repeat: -1, ease: "none" }),
+        gsap.to(el.querySelectorAll("[data-bar]"), {
+          scaleY: (i) => 0.4 + ((i % 3) * 0.25),
+          transformOrigin: "bottom",
+          duration: 1.1, yoyo: true, repeat: -1, ease: "sine.inOut", stagger: 0.12,
+        })
+      );
+
+      pauseOffscreen(el, loops);
     }, el);
     return () => ctx.revert();
   }, [type]);

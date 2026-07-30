@@ -42,7 +42,7 @@ export default function ProductTemplate({ product }: { product: Product }) {
       <section className="relative overflow-hidden bg-ink-900 pt-40 pb-24 md:pt-48 md:pb-32 noise">
         <div className="pointer-events-none absolute inset-0 grid-lines opacity-60" />
         <div
-          className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full blur-[120px]"
+          className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full blur-[120px] will-change-transform"
           style={{ background: "rgba(255,10,34,0.13)" }}
         />
         <div className="shell relative">
