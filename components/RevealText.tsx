@@ -11,6 +11,9 @@ type Props = {
   delay?: number;
   /** split into words (default) or characters */
   by?: "word" | "char";
+  /** silver shine gradient on each unit (heading-shine can't wrap the
+      animated spans — their own compositing layers break the clip) */
+  shine?: boolean;
 };
 
 /**
@@ -22,6 +25,7 @@ export default function RevealText({
   className,
   delay = 0,
   by = "word",
+  shine = false,
 }: Props) {
   const ref = useRef<HTMLElement>(null);
 
@@ -71,7 +75,7 @@ export default function RevealText({
           className="inline-block overflow-hidden align-bottom"
           style={{ paddingBottom: "0.15em", marginBottom: "-0.15em" }}
         >
-          <span className="inline-block will-change-transform">
+          <span className={clsx("inline-block will-change-transform", shine && "heading-shine")}>
             {u}
             {by === "word" && i < units.length - 1 ? " " : ""}
           </span>

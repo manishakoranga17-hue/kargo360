@@ -61,15 +61,6 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
           style={{ background: "rgba(255,10,34,0.13)" }}
         />
         <div className="shell relative flex flex-col items-center text-center">
-          <Link
-            href="/"
-            data-pfade
-            className="eyebrow mb-8 inline-flex items-center gap-2 hover:text-white"
-            data-cursor
-          >
-            ← Home
-          </Link>
-
           <div data-pfade className="mb-6">
             <span className="rounded-full border border-mist-line px-3 py-1 font-mono text-[0.65rem] uppercase tracking-widest text-mist">
               Solution · {solution.scope}
@@ -337,27 +328,6 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
           </div>
         </section>
       )}
-
-      {/* why kargo360 */}
-      <section className="relative overflow-hidden border-t border-mist-line bg-ink-900 py-24 md:py-36 noise">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-40 top-0 h-[420px] w-[420px] rounded-full blur-[110px] will-change-transform"
-          style={{ background: "rgba(255,10,34,0.07)" }}
-        />
-        <div className="shell relative">
-          <div className="eyebrow mb-8">// Why Kargo360</div>
-          <Reveal stagger className="grid gap-4 md:grid-cols-3">
-            {solution.pillars.map((pl, i) => (
-              <div key={pl.title} className="panel p-7">
-                <span className="text-xs font-medium text-signal-red">{String(i + 1).padStart(2, "0")}</span>
-                <h3 className="mt-6 text-2xl">{pl.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-mist">{pl.blurb}</p>
-              </div>
-            ))}
-          </Reveal>
-        </div>
-      </section>
 
       <Footer />
     </div>

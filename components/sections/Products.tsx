@@ -50,8 +50,12 @@ export default function Products() {
   };
 
   return (
-    <section id="products" className="relative bg-ink-900 py-24 md:py-32 noise">
-      <div className="shell">
+    <section id="products" className="relative overflow-hidden border-t border-mist-line bg-ink-900 py-24 md:py-36 noise">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-[radial-gradient(ellipse_42%_75%_at_30%_0%,rgba(255,255,255,0.06),transparent_70%)]"
+      />
+      <div className="shell relative">
         {/* intro */}
         <div className="mb-16 grid gap-8 md:mb-24 md:grid-cols-2 md:items-end">
           <div>
@@ -59,8 +63,8 @@ export default function Products() {
               <IsoMotif variant="stack" />
               <div className="eyebrow">// The suite · four K&apos;s, one platform</div>
             </div>
-            <h2 className="max-w-xl text-4xl leading-[1.02] sm:text-5xl md:text-6xl">
-              Streamline Your Cargo Operations
+            <h2 className="heading-glow max-w-xl text-4xl leading-[1.02] sm:text-5xl md:text-6xl">
+              <span className="heading-shine">Streamline Your Cargo Operations</span>
             </h2>
           </div>
           <p className="max-w-md text-lg leading-relaxed text-mist md:pb-2">

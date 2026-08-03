@@ -12,6 +12,10 @@ export default function ValueChain() {
       className="relative overflow-hidden border-t border-mist-line bg-ink-800 py-24 md:py-36"
     >
       <div className="pointer-events-none absolute inset-0 grid-lines opacity-30" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-[radial-gradient(ellipse_42%_75%_at_28%_0%,rgba(255,255,255,0.055),transparent_70%)]"
+      />
       <div className="shell relative grid items-center gap-16 lg:grid-cols-[0.95fr_1.05fr]">
         {/* copy */}
         <div>
@@ -19,8 +23,8 @@ export default function ValueChain() {
             <IsoMotif variant="ring" />
             <div className="eyebrow">{valueChain.eyebrow}</div>
           </div>
-          <h2 className="text-4xl leading-[0.98] sm:text-5xl md:text-6xl">
-            <RevealText text="One Platform." by="word" />
+          <h2 className="heading-glow text-4xl leading-[0.98] sm:text-5xl md:text-6xl">
+            <RevealText text="One Platform." by="word" shine />
             <br />
             <span className="text-signal">
               <RevealText text="Every Stakeholder." by="word" delay={0.08} />

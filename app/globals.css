@@ -282,6 +282,23 @@
     -webkit-mask-image: radial-gradient(ellipse 75% 65% at 60% 45%, #000 45%, transparent 100%);
     mask-image: radial-gradient(ellipse 75% 65% at 60% 45%, #000 45%, transparent 100%);
   }
+  /* volumetric light beam from above (authkit-style): three nested light
+     cones with an off-screen apex, blurred and faded out toward the bottom */
+  .hero-beam {
+    background:
+      conic-gradient(from 0deg at 50% -160px, transparent 138deg, rgba(255, 62, 70, 0.052) 180deg, transparent 222deg),
+      conic-gradient(from 0deg at 50% -160px, transparent 156deg, rgba(255, 112, 108, 0.068) 180deg, transparent 204deg),
+      conic-gradient(from 0deg at 50% -160px, transparent 170deg, rgba(255, 208, 200, 0.088) 180deg, transparent 190deg);
+    filter: blur(22px);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 94%);
+    mask-image: linear-gradient(180deg, #000 0%, #000 42%, transparent 94%);
+    animation: hero-beam 9s ease-in-out infinite;
+  }
+  @keyframes hero-beam {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+
   /* hero energy waves — soft red silk drifting at the base of the hero */
   .hero-wave {
     position: absolute;

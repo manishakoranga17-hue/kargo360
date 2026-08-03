@@ -159,7 +159,7 @@ export const solutions: Solution[] = [
     name: "GSA Services",
     scope: "General Sales Agent",
     heroKicker: "The time to transform is now with Kargo360.",
-    heroTitle: ["The GSA business,", "Reimagined."],
+    heroTitle: ["The GSA Business,", "Reimagined."],
     short:
       "End-to-end cargo General Sales Agent services for airlines — sales, operations and settlement, powered by the 360 platform.",
     long: "Kargo360 represents airlines in the market as their cargo General Sales Agent — selling capacity, managing reservations and customer relationships, and running day-to-day cargo operations, all backed by our own real-time technology suite.",
@@ -176,42 +176,42 @@ export const solutions: Solution[] = [
         "Most GSA operations still run the way they did twenty years ago — manual, opaque, and expensive to scale.",
       items: [
         {
-          title: "Bookings over phone & email",
+          title: "Bookings Over Phone & Email",
           blurb:
             "Every booking chases a phone call or an email thread — then gets re-typed into a spreadsheet anyway.",
           tag: "Manual intake",
           graphic: "manual",
         },
         {
-          title: "Month-end visibility",
+          title: "Month-End Visibility",
           blurb:
             "Airlines see how their capacity performed when the monthly report lands — weeks after the freight has flown.",
           tag: "Reporting lag",
           graphic: "lag",
         },
         {
-          title: "Disconnected systems",
+          title: "Disconnected Systems",
           blurb:
             "Sales in one tool, operations in another, accounting in a third. Nothing talks to anything.",
           tag: "Siloed stack",
           graphic: "silo",
         },
         {
-          title: "Rates buried in inboxes",
+          title: "Rates Buried in Inboxes",
           blurb:
             "Pricing lives in PDFs and email chains, so quoting is slow and inconsistent across the market.",
           tag: "Version chaos",
           graphic: "versions",
         },
         {
-          title: "Revenue leakage",
+          title: "Revenue Leakage",
           blurb:
             "Un-reconciled AWBs, missed CASS deadlines and billing disputes quietly eat into margin.",
           tag: "Silent leakage",
           graphic: "leak",
         },
         {
-          title: "Support-heavy service",
+          title: "Support-Heavy Service",
           blurb:
             "Every status check is a call your team has to answer — again and again, shipment after shipment.",
           tag: "Ticket treadmill",
@@ -225,50 +225,50 @@ export const solutions: Solution[] = [
         "We rebuilt the GSA model on our own technology — so every one of those problems has a systematic answer.",
       items: [
         {
-          title: "Book on the platform",
+          title: "Book on the Platform",
           blurb:
             "Search, quote and book on the 360 platform — every booking captured once, instantly, with nothing re-typed.",
-          replaces: "Bookings over phone & email",
+          replaces: "Bookings Over Phone & Email",
           tag: "Booking engine",
           graphic: "booking",
         },
         {
-          title: "Live performance dashboards",
+          title: "Live Performance Dashboards",
           blurb:
             "Airlines watch capacity, volumes and yields in real time on the 360 dashboard — not weeks later in a report.",
-          replaces: "Month-end visibility",
+          replaces: "Month-End Visibility",
           tag: "Live telemetry",
           graphic: "dashboard",
         },
         {
-          title: "One connected system",
+          title: "One Connected System",
           blurb:
             "Sales, operations and accounting run on a single platform, so every stakeholder works from the same truth.",
-          replaces: "Disconnected systems",
+          replaces: "Disconnected Systems",
           tag: "Unified data layer",
           graphic: "network",
         },
         {
-          title: "Centralised rate management",
+          title: "Centralised Rate Management",
           blurb:
             "Rates are managed centrally and quoted consistently — everyone prices from the same live source.",
-          replaces: "Rates buried in inboxes",
+          replaces: "Rates Buried in Inboxes",
           tag: "Rate engine",
           graphic: "rates",
         },
         {
-          title: "Airtight settlement",
+          title: "Airtight Settlement",
           blurb:
             "Every AWB is tracked from booking to billing with automated reconciliation — no more silent margin loss.",
-          replaces: "Revenue leakage",
+          replaces: "Revenue Leakage",
           tag: "Auto-reconciliation",
           graphic: "settlement",
         },
         {
-          title: "Self-service for customers",
+          title: "Self-Service for Customers",
           blurb:
             "360 Kontrol gives customers live tracking and documents on their own — cutting support effort by up to 85%.",
-          replaces: "Support-heavy service",
+          replaces: "Support-Heavy Service",
           tag: "360 Kontrol",
           graphic: "portal",
         },
@@ -280,11 +280,11 @@ export const solutions: Solution[] = [
         "Quotes, bookings, capacity and settlement — the whole GSA operation runs live in the 360 cockpit, visible to you and your airlines at every moment.",
     },
     video: {
-      title: "Watch: The GSA business, reimagined",
+      title: "Watch: The GSA Business, Reimagined",
       duration: "2:30",
     },
     model: {
-      heading: "Your airline. Our network. One platform.",
+      heading: "Your Airline. Our Network. One Platform.",
       intro:
         "As your General Sales Agent, Kargo360 plugs your airline into the entire cargo market — bookings, operations and settlement all flow through one live system.",
     },
@@ -358,7 +358,7 @@ export const features: Feature[] = [
 
 export const valueChain = {
   eyebrow: "// 360° value chain",
-  title: "One platform. Every stakeholder.",
+  title: "One Platform. Every Stakeholder.",
   body: "Kargo360 connects all eight categories of the air cargo value chain into a single real-time operating picture — so everyone works from the same truth.",
 };
 
@@ -373,6 +373,38 @@ export const closingCta = {
     "Receive a prompt response from our dedicated team",
     "Collaborate to tailor a solution aligned with your objectives",
     "Unlock efficiency with Kargo360's cutting-edge platform",
+  ],
+};
+
+export const faq = {
+  eyebrow: "// FAQ",
+  title: "Questions, Answered.",
+  body: "Everything teams usually ask before they run their cargo operation on Kargo360.",
+  items: [
+    {
+      q: "What exactly is Kargo360?",
+      a: "Kargo360 is a cloud-native SaaS platform for the air cargo value chain. It connects airlines, agents, handlers and customers on one real-time system — from booking and rating through tracking, operations and settlement.",
+    },
+    {
+      q: "Who is the platform built for?",
+      a: "Eight stakeholder categories: airlines, ground handlers, sales agents, truck operators, first- and last-mile partners, end customers and service providers — everyone works from the same live data.",
+    },
+    {
+      q: "How long does it take to get started?",
+      a: "Onboarding is a five-step process: get in touch, share your operational requirements, receive a prompt response from our team, collaborate on a solution aligned with your objectives, and go live. Most teams are up and running in weeks, not months.",
+    },
+    {
+      q: "Will it work with our existing systems?",
+      a: "Yes. 360 Konnect, our API suite, lets you search, book and track programmatically and connects to your ERPs, CRMs and partner systems — the platform is designed to slot into your existing stack.",
+    },
+    {
+      q: "Can our customers self-serve?",
+      a: "360 Kontrol gives your customers a branded portal with live shipments, documents and account management — cutting support effort by up to 85%.",
+    },
+    {
+      q: "How is pricing structured?",
+      a: "Pay-as-you-go economics that scale with your volume — no heavy upfront licence. Get in touch and we'll shape a plan around your operation.",
+    },
   ],
 };
 

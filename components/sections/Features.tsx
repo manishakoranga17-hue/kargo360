@@ -16,8 +16,12 @@ export default function Features() {
   const [active, setActive] = useState(0);
 
   return (
-    <section id="features" className="relative bg-ink-900 py-24 md:py-36 noise">
-      <div className="shell">
+    <section id="features" className="relative overflow-hidden border-t border-mist-line bg-ink-900 py-24 md:py-36 noise">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-[radial-gradient(ellipse_42%_75%_at_30%_0%,rgba(255,255,255,0.055),transparent_70%)]"
+      />
+      <div className="shell relative">
         {/* header */}
         <div className="mb-14 flex flex-col justify-between gap-6 md:mb-20 md:flex-row md:items-end">
           <div>
@@ -25,8 +29,8 @@ export default function Features() {
               <IsoMotif variant="cube" />
               <div className="eyebrow">// Built for enterprise cargo</div>
             </div>
-            <h2 className="max-w-2xl text-4xl leading-[0.98] sm:text-5xl md:text-6xl">
-              <RevealText text="Powerful Underneath." by="word" />
+            <h2 className="heading-glow max-w-2xl text-4xl leading-[0.98] sm:text-5xl md:text-6xl">
+              <RevealText text="Powerful Underneath." by="word" shine />
               <br />
               <span className="text-mist">
                 <RevealText text="Effortless on Top." by="word" delay={0.08} />

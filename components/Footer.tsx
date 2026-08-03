@@ -59,7 +59,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer ref={root} id="contact" className="relative overflow-hidden bg-ink-950">
+    <footer ref={root} id="contact" className="relative overflow-hidden border-t border-mist-line bg-ink-950">
       {/* ===== 3D floating hex-tile floor (spans CTA + footer card) ===== */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[72%] overflow-hidden">
         <HexFloor />
@@ -72,8 +72,8 @@ export default function Footer() {
         <div data-bfade className="mb-5 text-sm font-medium text-mist opacity-0">
           The next gen system for faster, smarter logistics
         </div>
-        <h2 className="text-5xl leading-[1.02] sm:text-6xl md:text-7xl">
-          <RevealText text="See Kargo360" by="word" />{" "}
+        <h2 className="heading-glow text-5xl leading-[1.02] sm:text-6xl md:text-7xl">
+          <RevealText text="See Kargo360" by="word" shine />{" "}
           <span className="text-signal">
             <RevealText text="in Action" by="word" delay={0.12} />
           </span>

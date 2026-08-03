@@ -50,6 +50,8 @@ export default function Hero() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_105%_at_50%_45%,transparent_55%,rgba(10,10,12,0.9)_100%)]" />
         {/* spotlight pool behind the headline */}
         <div className="absolute inset-x-0 top-0 h-[460px] bg-[radial-gradient(ellipse_44%_62%_at_50%_40%,rgba(255,255,255,0.07),transparent_70%)]" />
+        {/* volumetric beam from above */}
+        <div className="hero-beam absolute inset-x-0 top-0 h-[700px]" />
       </div>
 
       {/* side circuit gutters with traveling red pulses */}

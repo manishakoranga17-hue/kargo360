@@ -127,18 +127,22 @@ export default function Platform() {
   }, []);
 
   return (
-    <section id="platform" className="relative overflow-hidden bg-ink-950 py-24 md:py-32 noise">
+    <section id="platform" className="relative overflow-hidden border-t border-mist-line bg-ink-950 py-24 md:py-36 noise">
       <div className="pointer-events-none absolute inset-0 grid-lines opacity-30" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-[radial-gradient(ellipse_46%_75%_at_50%_0%,rgba(255,255,255,0.06),transparent_70%)]"
+      />
 
       <div className="shell relative">
         {/* centered header */}
         <div className="mx-auto mb-14 max-w-3xl text-center md:mb-20">
-          <div className="eyebrow mb-5 flex items-center justify-center gap-2.5">
+          <div className="eyebrow eyebrow-lines mb-6">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-signal-red animate-blink" />
             // The system behind it all
           </div>
-          <h2 className="text-4xl leading-[1.02] sm:text-5xl md:text-6xl">
-            <RevealText text="The Entire Operation," by="word" />
+          <h2 className="heading-glow text-4xl leading-[1.02] sm:text-5xl md:text-6xl">
+            <RevealText text="The Entire Operation," by="word" shine />
             <br />
             <span className="text-signal">
               <RevealText text="One Dashboard." by="word" delay={0.08} />
