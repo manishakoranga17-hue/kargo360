@@ -345,6 +345,30 @@
     50% { transform: translate(4%, -12%) scale(1.08); }
   }
 
+  /* thin red scan line sweeping down a console panel — pure transform,
+     height-independent (band lives at 50% of a full-height element) */
+  .scan-beam {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      transparent 44%,
+      rgba(255, 10, 34, 0.04) 48%,
+      rgba(255, 70, 88, 0.11) 50%,
+      rgba(255, 10, 34, 0.04) 52%,
+      transparent 56%
+    );
+    animation: scan-beam 8s linear infinite;
+    will-change: transform;
+  }
+  @keyframes scan-beam {
+    0% { transform: translateY(-58%); opacity: 0; }
+    10% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { transform: translateY(58%); opacity: 0; }
+  }
+
   /* set by lib/useAnimGate.ts while a section is off-screen */
   .anims-paused,
   .anims-paused *,
