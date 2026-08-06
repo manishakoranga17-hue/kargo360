@@ -82,12 +82,12 @@ function Stage({ apronLabels }: { apronLabels: [string, string, string] }) {
       </Mono>
       {/* task chair */}
       <rect x={378} y={292} width={14} height={140} rx={7} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-      <rect x={384} y={430} width={88} height={14} rx={7} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-      <path d="M428,444 L428,496" stroke={BRIGHT} strokeWidth={2.5} />
-      <path d="M428,496 L396,532 M428,496 L428,538 M428,496 L460,532" stroke={BRIGHT} strokeWidth={2} fill="none" />
-      <circle cx={394} cy={537} r={5.5} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-      <circle cx={428} cy={543} r={5.5} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-      <circle cx={462} cy={537} r={5.5} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
+      <rect x={384} y={430} width={96} height={14} rx={7} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
+      <path d="M430,444 L430,496" stroke={BRIGHT} strokeWidth={2.5} />
+      <path d="M430,496 L398,532 M430,496 L430,538 M430,496 L462,532" stroke={BRIGHT} strokeWidth={2} fill="none" />
+      <circle cx={396} cy={537} r={5.5} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
+      <circle cx={430} cy={543} r={5.5} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
+      <circle cx={464} cy={537} r={5.5} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
       {/* keyboard */}
       <rect x={502} y={379} width={78} height={8} rx={3} fill={CARD} stroke={MIST} strokeWidth={1.2} />
     </g>
@@ -294,35 +294,26 @@ function SceneBefore() {
         </Mono>
       </g>
 
-      {/* the operator — hunched toward the screens, hand at her temple */}
+      {/* the operator — hunched in, chin on her fist */}
       <g data-figure data-in>
         {/* far arm reaching the keyboard */}
-        <Limb d="M460,318 C492,348 522,370 546,380" w={11} />
-        {/* torso, leaning in */}
+        <Limb d="M460,312 C494,350 526,370 546,380" w={11} />
+        {/* torso — rounded hunch, real seated depth */}
         <path
-          d="M405,448 C402,412 410,378 424,352 C434,330 446,312 462,304 L478,302 C486,312 484,326 474,334 C464,346 458,362 455,380 L452,448 Z"
+          d="M474,272 C452,282 438,300 434,326 C430,352 426,390 426,436 L474,436 C476,406 478,378 476,352 C474,330 478,314 486,300 C489,292 487,282 482,274 Z"
           fill={BODY}
           stroke={BRIGHT}
           strokeWidth={1.5}
         />
         {/* red scarf accent */}
-        <path d="M468,306 L482,300 L479,318 Z" fill={RED} />
-        {/* head + low bun */}
-        <circle cx={486} cy={268} r={18} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-        <path
-          d="M468,268 C466,250 478,240 490,242 C500,244 506,254 504,264 C496,254 482,252 468,268 Z"
-          fill={HAIR}
-          stroke={BRIGHT}
-          strokeWidth={1.2}
-        />
-        <circle cx={462} cy={248} r={10} fill={HAIR} stroke={BRIGHT} strokeWidth={1.2} />
-        {/* near arm — hand rubbing the back of her neck */}
-        <Limb d="M466,314 C504,310 508,296 488,286" w={12} />
-        <circle cx={486} cy={284} r={5.5} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-        {/* legs under the desk */}
-        <Limb d="M466,462 C464,496 461,518 459,532" w={10} />
-        <path d="M459,532 L484,537" stroke={BRIGHT} strokeWidth={2.5} strokeLinecap="round" />
-        <Limb d="M448,462 C446,496 443,518 441,532" w={10} />
+        <path d="M472,300 L485,294 L480,312 Z" fill={RED} />
+        {/* head — hair sheen crescent + low bun */}
+        <circle cx={479} cy={252} r={18} fill={HAIR} stroke={BRIGHT} strokeWidth={1.5} />
+        <circle cx={484} cy={257} r={14} fill={BODY} />
+        <ellipse cx={459} cy={238} rx={10} ry={9} fill={HAIR} stroke={BRIGHT} strokeWidth={1.2} />
+        {/* near arm — chin resting on fist */}
+        <Limb d="M464,304 C500,310 504,296 488,284" w={11} />
+        <circle cx={487} cy={282} r={5} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
       </g>
 
       {/* main monitor — three siloed windows, alerts, glitches */}
@@ -642,37 +633,28 @@ function SceneAfter() {
       {/* the operator — upright, coffee in hand */}
       <g data-figure data-in>
         {/* far arm resting toward the desk */}
-        <Limb d="M458,318 C496,352 526,372 544,380" w={11} />
-        {/* upright torso */}
+        <Limb d="M456,316 C494,354 526,372 544,380" w={11} />
+        {/* upright torso, real seated depth */}
         <path
-          d="M408,448 C406,402 414,362 430,336 C440,318 452,308 464,302 L480,302 C488,314 484,330 474,336 C464,348 460,368 458,390 L456,448 Z"
+          d="M472,272 C454,284 444,304 442,330 C440,356 436,394 436,436 L482,436 C482,406 482,378 480,352 C478,330 480,314 486,300 C489,292 486,282 480,274 Z"
           fill={BODY}
           stroke={BRIGHT}
           strokeWidth={1.5}
         />
         {/* red scarf accent */}
-        <path d="M466,306 L480,300 L477,318 Z" fill={RED} />
-        {/* head + neat bun */}
-        <circle cx={478} cy={258} r={18} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-        <path
-          d="M460,258 C458,240 470,230 482,232 C492,234 498,244 496,254 C488,244 474,242 460,258 Z"
-          fill={HAIR}
-          stroke={BRIGHT}
-          strokeWidth={1.2}
-        />
-        <circle cx={452} cy={236} r={10} fill={HAIR} stroke={BRIGHT} strokeWidth={1.2} />
+        <path d="M472,300 L485,294 L480,312 Z" fill={RED} />
+        {/* head — hair sheen crescent + neat bun */}
+        <circle cx={477} cy={250} r={18} fill={HAIR} stroke={BRIGHT} strokeWidth={1.5} />
+        <circle cx={482} cy={255} r={14} fill={BODY} />
+        <ellipse cx={457} cy={236} rx={10} ry={9} fill={HAIR} stroke={BRIGHT} strokeWidth={1.2} />
         {/* near arm — holding the mug */}
-        <Limb d="M462,314 C494,336 508,330 512,314" w={12} />
+        <Limb d="M462,308 C492,332 504,324 507,308" w={11} />
         {/* mug */}
-        <rect x={502} y={286} width={26} height={28} rx={4} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-        <rect x={502} y={292} width={26} height={5} fill={RED} />
-        <path d="M528,292 q11,6 0,15" stroke={BRIGHT} strokeWidth={1.8} fill="none" />
-        <path data-steam d="M509,280 c-4,-8 4,-12 0,-20" stroke={MIST} strokeWidth={1.3} fill="none" strokeLinecap="round" />
-        <path data-steam d="M520,278 c4,-8 -4,-12 0,-20" stroke={MIST} strokeWidth={1.3} fill="none" strokeLinecap="round" />
-        {/* legs, at ease */}
-        <Limb d="M466,462 C464,496 461,518 459,532" w={10} />
-        <path d="M459,532 L484,537" stroke={BRIGHT} strokeWidth={2.5} strokeLinecap="round" />
-        <Limb d="M448,462 C446,496 443,518 441,532" w={10} />
+        <rect x={498} y={282} width={22} height={25} rx={4} fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
+        <rect x={498} y={287} width={22} height={4} fill={RED} />
+        <path d="M520,288 q9,5 0,13" stroke={BRIGHT} strokeWidth={1.6} fill="none" />
+        <path data-steam d="M505,276 c-4,-8 4,-12 0,-20" stroke={MIST} strokeWidth={1.3} fill="none" strokeLinecap="round" />
+        <path data-steam d="M516,274 c4,-8 -4,-12 0,-20" stroke={MIST} strokeWidth={1.3} fill="none" strokeLinecap="round" />
       </g>
 
       {/* one clean 360 dashboard */}
