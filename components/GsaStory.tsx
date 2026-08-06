@@ -793,9 +793,9 @@ function SceneAfter() {
 
       {/* settlement sealed where the leak used to be */}
       <g data-in>
-        <rect x={856} y={496} width={112} height={26} rx={13} fill={CARD} stroke={MIST} strokeWidth={1.2} />
-        <path d="M868,509 l3,3 l5,-6" stroke={RED} strokeWidth={1.6} fill="none" strokeLinecap="round" />
-        <Mono x={884} y={513} size={7} fill={MIST} anchor="start">
+        <rect x={850} y={490} width={136} height={32} rx={16} fill={CARD} stroke="rgba(255,255,255,0.4)" strokeWidth={1.2} />
+        <path d="M864,506 l3.5,3.5 l6,-7" stroke={RED} strokeWidth={1.8} fill="none" strokeLinecap="round" />
+        <Mono x={882} y={510} size={8} fill="rgba(255,255,255,0.9)" anchor="start">
           100% matched
         </Mono>
         <SceneTag x={846} y={566} w={118} label="Zero leakage" fixed />
@@ -804,7 +804,7 @@ function SceneAfter() {
       <SceneTag x={681} y={420} w={118} label="One platform" fixed />
 
       {/* one tidy cable */}
-      <path d="M750,462 C750,496 820,506 900,510" stroke={DIM} strokeWidth={1.2} fill="none" />
+      <path d="M750,462 C750,488 780,498 822,502" stroke={DIM} strokeWidth={1.2} fill="none" />
     </svg>
   );
 }
