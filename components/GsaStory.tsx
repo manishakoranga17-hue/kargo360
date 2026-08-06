@@ -46,6 +46,44 @@ function Mono({
   );
 }
 
+/** pinned callout tag: red ✕ fault pill, or ✓ solved pill */
+function SceneTag({
+  x,
+  y,
+  w,
+  label,
+  fixed = false,
+}: {
+  x: number;
+  y: number;
+  w: number;
+  label: string;
+  fixed?: boolean;
+}) {
+  return (
+    <g data-in>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={24}
+        rx={12}
+        fill={fixed ? "rgba(255,255,255,0.05)" : "rgba(255,10,34,0.10)"}
+        stroke={fixed ? "rgba(255,255,255,0.22)" : "rgba(255,47,69,0.5)"}
+        strokeWidth={1.2}
+      />
+      {fixed ? (
+        <path d={`M${x + 12},${y + 12} l3.5,3.5 l6,-7`} stroke={RED} strokeWidth={1.8} fill="none" strokeLinecap="round" />
+      ) : (
+        <path d={`M${x + 12},${y + 8} l7,7 M${x + 19},${y + 8} l-7,7`} stroke={RED} strokeWidth={1.8} strokeLinecap="round" />
+      )}
+      <Mono x={x + 30} y={y + 16} size={8.5} fill="rgba(255,255,255,0.8)" anchor="start">
+        {label}
+      </Mono>
+    </g>
+  );
+}
+
 /** limb drawn as an outlined capsule: bright rim under a body-fill stroke */
 function Limb({ d, w = 12 }: { d: string; w?: number }) {
   return (
@@ -57,7 +95,7 @@ function Limb({ d, w = 12 }: { d: string; w?: number }) {
 }
 
 /** shared stage: floor, desk with front apron, task chair, ground shadows */
-function Stage({ apronLabels }: { apronLabels: [string, string, string] }) {
+function Stage() {
   return (
     <g>
       {/* floor + soft ground shadows */}
@@ -71,16 +109,6 @@ function Stage({ apronLabels }: { apronLabels: [string, string, string] }) {
       <line x1={268} y1={412} x2={1022} y2={412} stroke="rgba(255,255,255,0.05)" />
       {/* legs below apron */}
       <path d="M284,462 L284,548 M1006,462 L1006,548" stroke={BRIGHT} strokeWidth={2} />
-      {/* apron spec labels */}
-      <Mono x={310} y={456} size={8.5} fill="rgba(255,255,255,0.3)" anchor="start">
-        {apronLabels[0]}
-      </Mono>
-      <Mono x={745} y={456} size={8.5} fill="rgba(255,255,255,0.3)">
-        {apronLabels[1]}
-      </Mono>
-      <Mono x={985} y={456} size={8.5} fill="rgba(255,255,255,0.3)" anchor="end">
-        {apronLabels[2]}
-      </Mono>
       {/* task chair */}
       <rect x={346} y={300} width={16} height={132} rx={8} fill={INK} stroke={FIGURE} strokeWidth={2} />
       <rect x={352} y={424} width={104} height={16} rx={8} fill={INK} stroke={FIGURE} strokeWidth={2} />
@@ -256,7 +284,7 @@ function SceneBefore() {
       {/* unrest glow behind the workstation */}
       <ellipse cx={800} cy={280} rx={340} ry={220} fill="url(#gb-glow)" />
 
-      <Stage apronLabels={["Fault · Version chaos", "Fault · Siloed stack", "Fault · Manual intake"]} />
+      <Stage />
 
       {/* wall — clock, month-end calendar, leaning shelf */}
       <g data-in>
@@ -272,10 +300,7 @@ function SceneBefore() {
         <Mono x={262} y={114} size={8} fill={RED}>
           Month end
         </Mono>
-        <Mono x={230} y={215} size={10} anchor="start">
-          Reporting lag
-        </Mono>
-        <line x1={224} y1={211} x2={206} y2={196} stroke={LINE} />
+        <SceneTag x={170} y={200} w={126} label="Reporting lag" />
         {/* shelf with slumping binders */}
         <line x1={140} y1={276} x2={320} y2={276} stroke={MIST} strokeWidth={1.5} />
         <path d="M152,276 L146,286 M310,276 L316,286" stroke={DIM} strokeWidth={1.2} />
@@ -304,9 +329,7 @@ function SceneBefore() {
             rate_v7
           </Mono>
         </g>
-        <Mono x={305} y={250} size={10}>
-          Version chaos
-        </Mono>
+        <SceneTag x={240} y={244} w={126} label="Version chaos" />
       </g>
 
       {/* the operator — stroke figure, hunched, one hand on her head */}
@@ -444,9 +467,7 @@ function SceneBefore() {
           <circle cx={1052} cy={242} r={1.5} fill={MIST} />
           <circle cx={1060} cy={242} r={1.5} fill={MIST} />
         </g>
-        <Mono x={1064} y={208} size={10}>
-          Ticket treadmill
-        </Mono>
+        <SceneTag x={990} y={196} w={144} label="Ticket treadmill" />
       </g>
 
       {/* margin leaking away below the desk */}
@@ -456,10 +477,11 @@ function SceneBefore() {
           <line data-coin x1={912} y1={484} x2={920} y2={484} />
           <line data-coin x1={900} y1={492} x2={908} y2={492} />
         </g>
-        <Mono x={905} y={585} size={10}>
-          Silent leakage
-        </Mono>
+        <SceneTag x={839} y={566} w={132} label="Silent leakage" />
       </g>
+      {/* apron fault tags */}
+      <SceneTag x={681} y={420} w={118} label="Siloed stack" />
+      <SceneTag x={912} y={420} w={126} label="Manual intake" />
 
       {/* tangled cables under the desk */}
       <path
@@ -612,7 +634,7 @@ function SceneAfter() {
       {/* calm glow behind the workstation */}
       <ellipse cx={790} cy={270} rx={360} ry={230} fill="url(#ga-glow)" />
 
-      <Stage apronLabels={["Fixed · Rate engine", "Fixed · One platform", "Fixed · Self-serve"]} />
+      <Stage />
 
       {/* wall — calm clock, live-reports chip, tidy shelf */}
       <g data-in>
@@ -626,10 +648,7 @@ function SceneAfter() {
         <Mono x={260} y={128} size={8} fill={MIST} anchor="start">
           Reports live
         </Mono>
-        <Mono x={230} y={215} size={10} anchor="start">
-          Live telemetry
-        </Mono>
-        <line x1={224} y1={211} x2={206} y2={196} stroke={LINE} />
+        <SceneTag x={170} y={200} w={132} label="Live telemetry" fixed />
         {/* tidy shelf */}
         <line x1={140} y1={276} x2={320} y2={276} stroke={MIST} strokeWidth={1.5} />
         <path d="M152,276 L146,286 M310,276 L316,286" stroke={DIM} strokeWidth={1.2} />
@@ -643,6 +662,7 @@ function SceneAfter() {
       {/* desk plant where the paper pile used to be */}
       <g data-in>
         <path d="M286,388 L318,388 L313,352 L291,352 Z" fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
+        <SceneTag x={254} y={244} w={112} label="Rate engine" fixed />
         <g data-leaf stroke={BRIGHT} strokeWidth={1.8} fill="none" strokeLinecap="round">
           <path d="M302,352 C302,328 290,316 282,304" />
           <path d="M302,352 C304,324 316,314 326,306" />
@@ -767,10 +787,8 @@ function SceneAfter() {
         <Mono x={972} y={374} size={6} fill={DIM}>
           Kontrol
         </Mono>
-        <Mono x={1064} y={310} size={10}>
-          85% self-serve
-        </Mono>
-        <line x1={1022} y1={314} x2={1000} y2={330} stroke={LINE} />
+        <SceneTag x={916} y={420} w={112} label="360 Kontrol" fixed />
+        <SceneTag x={952} y={200} w={132} label="Booking engine" fixed />
       </g>
 
       {/* settlement sealed where the leak used to be */}
@@ -780,10 +798,10 @@ function SceneAfter() {
         <Mono x={884} y={513} size={7} fill={MIST} anchor="start">
           100% matched
         </Mono>
-        <Mono x={905} y={585} size={10}>
-          Zero leakage
-        </Mono>
+        <SceneTag x={846} y={566} w={118} label="Zero leakage" fixed />
       </g>
+      {/* apron solved tag */}
+      <SceneTag x={681} y={420} w={118} label="One platform" fixed />
 
       {/* one tidy cable */}
       <path d="M750,462 C750,496 820,506 900,510" stroke={DIM} strokeWidth={1.2} fill="none" />
@@ -796,9 +814,13 @@ function SceneAfter() {
 export default function GsaStory({
   beforeCaption,
   afterCaption,
+  faults,
+  cures,
 }: {
   beforeCaption: string;
   afterCaption: string;
+  faults: string[];
+  cures: string[];
 }) {
   const [tab, setTab] = useState<"before" | "after">("before");
 
@@ -867,6 +889,41 @@ export default function GsaStory({
             )}
           >
             <SceneAfter />
+          </div>
+        </div>
+        {/* fault / solved board */}
+        <div className="relative border-t border-white/10 bg-ink-950/40 px-5 py-5">
+          <div key={tab} className="flex flex-col items-center gap-3.5">
+            <div className="chip-in font-mono text-[0.6rem] uppercase tracking-widest text-mist-dim">
+              {tab === "before"
+                ? `${String(faults.length).padStart(2, "0")} problems in this picture`
+                : `All ${String(cures.length).padStart(2, "0")} solved on the 360 platform`}
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              {(tab === "before" ? faults : cures).map((label, i) => (
+                <span
+                  key={label}
+                  className={clsx(
+                    "chip-in inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs md:text-sm",
+                    tab === "before"
+                      ? "border-signal-red/40 bg-signal-red/[0.07] text-mist-bright"
+                      : "border-mist-line bg-white/[0.04] text-mist-bright"
+                  )}
+                  style={{ animationDelay: `${80 + i * 70}ms` }}
+                >
+                  {tab === "before" ? (
+                    <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+                      <path d="M1.5,1.5 l7,7 M8.5,1.5 l-7,7" stroke="#ff2f45" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg width="11" height="11" viewBox="0 0 11 11" aria-hidden>
+                      <path d="M1.5,6 l3,3 l5,-6.5" stroke="#ff2f45" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                    </svg>
+                  )}
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         {/* frame footer */}

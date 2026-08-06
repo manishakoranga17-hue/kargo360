@@ -231,6 +231,8 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
               <GsaStory
                 beforeCaption={solution.pains.intro}
                 afterCaption={solution.fixes.intro}
+                faults={solution.pains.items.map((p) => p.title)}
+                cures={solution.fixes.items.map((f) => f.title)}
               />
             </Reveal>
           </div>
