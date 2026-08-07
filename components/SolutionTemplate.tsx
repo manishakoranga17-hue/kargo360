@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import type { Solution } from "@/lib/content";
 import { registerGsap, gsap, prefersReducedMotion } from "@/lib/gsap";
@@ -11,6 +12,8 @@ import Magnetic from "@/components/Magnetic";
 import GsaDashboard from "@/components/GsaDashboard";
 import GsaModelGraphic from "@/components/GsaModelGraphic";
 import GsaStory from "@/components/GsaStory";
+
+const GsaStory3D = dynamic(() => import("@/components/GsaStory3D"), { ssr: false });
 import TelemetryTicker from "@/components/TelemetryTicker";
 
 /** blueprint corner marks — place inside a `relative` container */
@@ -68,7 +71,16 @@ function SectionHead({
 
 export default function SolutionTemplate({ solution }: { solution: Solution }) {
   const root = useRef<HTMLDivElement>(null);
+  const [use3d, setUse3d] = useState(false);
   const [headLead, headAccent] = solution.heroTitle;
+
+  // the scroll-driven WebGL story runs on desktop pointers only
+  useEffect(() => {
+    setUse3d(
+      window.matchMedia("(min-width: 1024px) and (pointer: fine)").matches &&
+        !prefersReducedMotion()
+    );
+  }, []);
 
   useEffect(() => {
     registerGsap();
@@ -215,27 +227,39 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
 
       {/* [01] the story — before / after Kargo360 */}
       {solution.pains && solution.fixes && (
-        <section className="relative overflow-hidden bg-ink-950 py-24 md:py-32 noise">
+        <section className="relative bg-ink-950 noise">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-0 h-[340px] bg-[radial-gradient(ellipse_46%_75%_at_50%_0%,rgba(255,255,255,0.06),transparent_70%)]"
           />
-          <div className="shell relative">
+          <div className="shell relative pt-24 md:pt-32">
             <SectionHead
               index="01"
               label="The story"
               title={solution.pains.heading}
-              intro="One desk, two realities. Flip between how the day runs before Kargo360 — and after."
+              intro="One operation, two realities. Scroll through the space — watch every problem get pulled into orbit and solved."
             />
-            <Reveal>
-              <GsaStory
-                beforeCaption={solution.pains.intro}
-                afterCaption={solution.fixes.intro}
-                faults={solution.pains.items.map((p) => p.title)}
-                cures={solution.fixes.items.map((f) => f.title)}
-              />
-            </Reveal>
           </div>
+          {use3d ? (
+            <GsaStory3D
+              faults={solution.pains.items.map((p) => p.title)}
+              cures={solution.fixes.items.map((f) => f.title)}
+              beforeCaption={solution.pains.intro}
+              afterCaption={solution.fixes.intro}
+            />
+          ) : (
+            <div className="shell relative pb-24 md:pb-32">
+              <Reveal>
+                <GsaStory
+                  beforeCaption={solution.pains.intro}
+                  afterCaption={solution.fixes.intro}
+                  faults={solution.pains.items.map((p) => p.title)}
+                  cures={solution.fixes.items.map((f) => f.title)}
+                />
+              </Reveal>
+            </div>
+          )}
+          {use3d && <div className="h-24 md:h-32" />}
         </section>
       )}
 
