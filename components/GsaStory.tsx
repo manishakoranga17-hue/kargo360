@@ -300,7 +300,6 @@ function SceneBefore() {
         <Mono x={262} y={114} size={8} fill={RED}>
           Month end
         </Mono>
-        <SceneTag x={170} y={200} w={126} label="Reporting lag" />
         {/* shelf with slumping binders */}
         <line x1={140} y1={276} x2={320} y2={276} stroke={MIST} strokeWidth={1.5} />
         <path d="M152,276 L146,286 M310,276 L316,286" stroke={DIM} strokeWidth={1.2} />
@@ -329,7 +328,6 @@ function SceneBefore() {
             rate_v7
           </Mono>
         </g>
-        <SceneTag x={240} y={244} w={126} label="Version chaos" />
       </g>
 
       {/* the operator — stroke figure, hunched, one hand on her head */}
@@ -467,7 +465,6 @@ function SceneBefore() {
           <circle cx={1052} cy={242} r={1.5} fill={MIST} />
           <circle cx={1060} cy={242} r={1.5} fill={MIST} />
         </g>
-        <SceneTag x={990} y={196} w={144} label="Ticket treadmill" />
       </g>
 
       {/* margin leaking away below the desk */}
@@ -477,11 +474,7 @@ function SceneBefore() {
           <line data-coin x1={912} y1={484} x2={920} y2={484} />
           <line data-coin x1={900} y1={492} x2={908} y2={492} />
         </g>
-        <SceneTag x={839} y={566} w={132} label="Silent leakage" />
       </g>
-      {/* apron fault tags */}
-      <SceneTag x={681} y={420} w={118} label="Siloed stack" />
-      <SceneTag x={912} y={420} w={126} label="Manual intake" />
 
       {/* tangled cables under the desk */}
       <path
@@ -648,7 +641,6 @@ function SceneAfter() {
         <Mono x={260} y={128} size={8} fill={MIST} anchor="start">
           Reports live
         </Mono>
-        <SceneTag x={170} y={200} w={132} label="Live telemetry" fixed />
         {/* tidy shelf */}
         <line x1={140} y1={276} x2={320} y2={276} stroke={MIST} strokeWidth={1.5} />
         <path d="M152,276 L146,286 M310,276 L316,286" stroke={DIM} strokeWidth={1.2} />
@@ -662,7 +654,6 @@ function SceneAfter() {
       {/* desk plant where the paper pile used to be */}
       <g data-in>
         <path d="M286,388 L318,388 L313,352 L291,352 Z" fill={BODY} stroke={BRIGHT} strokeWidth={1.5} />
-        <SceneTag x={254} y={244} w={112} label="Rate engine" fixed />
         <g data-leaf stroke={BRIGHT} strokeWidth={1.8} fill="none" strokeLinecap="round">
           <path d="M302,352 C302,328 290,316 282,304" />
           <path d="M302,352 C304,324 316,314 326,306" />
@@ -787,8 +778,6 @@ function SceneAfter() {
         <Mono x={972} y={374} size={6} fill={DIM}>
           Kontrol
         </Mono>
-        <SceneTag x={916} y={420} w={112} label="360 Kontrol" fixed />
-        <SceneTag x={952} y={200} w={132} label="Booking engine" fixed />
       </g>
 
       {/* settlement sealed where the leak used to be */}
@@ -798,14 +787,38 @@ function SceneAfter() {
         <Mono x={882} y={510} size={8} fill="rgba(255,255,255,0.9)" anchor="start">
           100% matched
         </Mono>
-        <SceneTag x={846} y={566} w={118} label="Zero leakage" fixed />
       </g>
-      {/* apron solved tag */}
-      <SceneTag x={681} y={420} w={118} label="One platform" fixed />
 
       {/* one tidy cable */}
       <path d="M750,462 C750,488 780,498 822,502" stroke={DIM} strokeWidth={1.2} fill="none" />
     </svg>
+  );
+}
+
+/** floating callout layers — rendered above the scene at depth in 3D */
+function TagsBefore() {
+  return (
+    <>
+      <SceneTag x={170} y={200} w={126} label="Reporting lag" />
+      <SceneTag x={240} y={244} w={126} label="Version chaos" />
+      <SceneTag x={681} y={420} w={118} label="Siloed stack" />
+      <SceneTag x={912} y={420} w={126} label="Manual intake" />
+      <SceneTag x={990} y={196} w={144} label="Ticket treadmill" />
+      <SceneTag x={839} y={566} w={132} label="Silent leakage" />
+    </>
+  );
+}
+
+function TagsAfter() {
+  return (
+    <>
+      <SceneTag x={170} y={200} w={132} label="Live telemetry" fixed />
+      <SceneTag x={254} y={244} w={112} label="Rate engine" fixed />
+      <SceneTag x={681} y={420} w={118} label="One platform" fixed />
+      <SceneTag x={916} y={420} w={112} label="360 Kontrol" fixed />
+      <SceneTag x={952} y={200} w={132} label="Booking engine" fixed />
+      <SceneTag x={846} y={566} w={118} label="Zero leakage" fixed />
+    </>
   );
 }
 
@@ -823,6 +836,76 @@ export default function GsaStory({
   cures: string[];
 }) {
   const [tab, setTab] = useState<"before" | "after">("before");
+  const stageRef = useRef<HTMLDivElement>(null);
+  const sheenRef = useRef<HTMLDivElement>(null);
+
+  // 3D stage: rest tilt + idle bob, mouse-tracked tilt with layered parallax
+  useEffect(() => {
+    registerGsap();
+    const stage = stageRef.current;
+    if (!stage) return;
+    if (prefersReducedMotion()) return;
+
+    const layers = Array.from(stage.querySelectorAll<HTMLElement>("[data-depth]"));
+
+    const ctx = gsap.context(() => {
+      gsap.set(stage, { rotationX: 7, transformPerspective: 0 });
+      layers.forEach((l) => gsap.set(l, { z: Number(l.dataset.depth) * 34 }));
+
+      const bob = gsap.to(stage, {
+        rotationX: 9,
+        y: -6,
+        duration: 4,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        paused: false,
+      });
+      pauseOffscreen(stage, [bob]);
+
+      const rx = gsap.quickTo(stage, "rotationX", { duration: 0.7, ease: "power3.out" });
+      const ry = gsap.quickTo(stage, "rotationY", { duration: 0.7, ease: "power3.out" });
+      const layerTo = layers.map((l) => ({
+        x: gsap.quickTo(l, "x", { duration: 0.7, ease: "power3.out" }),
+        y: gsap.quickTo(l, "y", { duration: 0.7, ease: "power3.out" }),
+        d: Number(l.dataset.depth),
+      }));
+
+      const move = (e: MouseEvent) => {
+        const r = stage.getBoundingClientRect();
+        const nx = (e.clientX - r.left) / r.width - 0.5;
+        const ny = (e.clientY - r.top) / r.height - 0.5;
+        bob.pause();
+        rx(7 - ny * 9);
+        ry(nx * 11);
+        layerTo.forEach((l) => {
+          l.x(nx * l.d * -16);
+          l.y(ny * l.d * -11);
+        });
+        if (sheenRef.current) {
+          gsap.to(sheenRef.current, { xPercent: nx * 26, opacity: 1, duration: 0.7, ease: "power3.out" });
+        }
+      };
+      const leave = () => {
+        rx(7);
+        ry(0);
+        layerTo.forEach((l) => {
+          l.x(0);
+          l.y(0);
+        });
+        if (sheenRef.current) gsap.to(sheenRef.current, { xPercent: 0, opacity: 0.55, duration: 0.9 });
+        bob.resume();
+      };
+
+      stage.addEventListener("mousemove", move);
+      stage.addEventListener("mouseleave", leave);
+      return () => {
+        stage.removeEventListener("mousemove", move);
+        stage.removeEventListener("mouseleave", leave);
+      };
+    }, stage);
+    return () => ctx.revert();
+  }, []);
 
   return (
     <div>
@@ -863,34 +946,84 @@ export default function GsaStory({
         </p>
       </div>
 
-      {/* stage */}
-      <div className="panel relative mt-10 overflow-hidden !rounded-3xl">
-        <div className="pointer-events-none absolute inset-0 grid-lines opacity-20" />
+      {/* stage — 3D diorama slab */}
+      <div className="relative mt-12 [perspective:1500px]">
+        {/* floor shadow */}
         <div
           aria-hidden
-          className={clsx(
-            "pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full blur-[110px] transition-colors duration-1000 will-change-transform",
-            tab === "before" ? "bg-[rgba(255,10,34,0.10)]" : "bg-[rgba(255,255,255,0.06)]"
-          )}
+          className="pointer-events-none absolute inset-x-16 -bottom-10 h-24 rounded-[100%] bg-black/70 blur-2xl"
         />
-        <div className="relative aspect-[1200/620]">
+        <div
+          ref={stageRef}
+          className="relative rounded-3xl border border-white/10 will-change-transform [transform-style:preserve-3d]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.025) 30%, rgba(13,13,17,0.96) 100%)",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.12), 0 2px 4px rgba(0,0,0,0.35), 0 48px 90px -26px rgba(0,0,0,0.9)",
+          }}
+        >
+          <div className="pointer-events-none absolute inset-0 rounded-3xl grid-lines opacity-20" />
+          {/* glow — sunk behind the scene */}
           <div
+            aria-hidden
+            data-depth="-1.6"
             className={clsx(
-              "absolute inset-0 transition-all duration-700",
-              tab === "before" ? "opacity-100" : "invisible opacity-0"
+              "pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full blur-[110px] transition-colors duration-1000 will-change-transform",
+              tab === "before" ? "bg-[rgba(255,10,34,0.10)]" : "bg-[rgba(255,255,255,0.06)]"
             )}
-          >
-            <SceneBefore />
+          />
+          <div className="relative aspect-[1200/620] [transform-style:preserve-3d]">
+            {/* before */}
+            <div
+              className={clsx(
+                "absolute inset-0 transition-all duration-700 [transform-style:preserve-3d]",
+                tab === "before" ? "opacity-100" : "invisible opacity-0"
+              )}
+            >
+              <div data-depth="0" className="absolute inset-0 will-change-transform">
+                <SceneBefore />
+              </div>
+              <svg
+                data-depth="1.5"
+                viewBox="0 0 1200 620"
+                aria-hidden
+                className="pointer-events-none absolute inset-0 h-full w-full will-change-transform"
+              >
+                <TagsBefore />
+              </svg>
+            </div>
+            {/* after */}
+            <div
+              className={clsx(
+                "absolute inset-0 transition-all duration-700 [transform-style:preserve-3d]",
+                tab === "after" ? "opacity-100" : "invisible opacity-0"
+              )}
+            >
+              <div data-depth="0" className="absolute inset-0 will-change-transform">
+                <SceneAfter />
+              </div>
+              <svg
+                data-depth="1.5"
+                viewBox="0 0 1200 620"
+                aria-hidden
+                className="pointer-events-none absolute inset-0 h-full w-full will-change-transform"
+              >
+                <TagsAfter />
+              </svg>
+            </div>
           </div>
+          {/* glass sheen sweeping with the tilt */}
           <div
-            className={clsx(
-              "absolute inset-0 transition-all duration-700",
-              tab === "after" ? "opacity-100" : "invisible opacity-0"
-            )}
-          >
-            <SceneAfter />
-          </div>
-        </div>
+            ref={sheenRef}
+            aria-hidden
+            className="pointer-events-none absolute inset-0 rounded-3xl will-change-transform"
+            style={{
+              opacity: 0.55,
+              background:
+                "linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.055) 47%, transparent 62%)",
+            }}
+          />
         {/* fault / solved board */}
         <div className="relative border-t border-white/10 bg-ink-950/40 px-5 py-5">
           <div key={tab} className="flex flex-col items-center gap-3.5">
@@ -927,7 +1060,7 @@ export default function GsaStory({
           </div>
         </div>
         {/* frame footer */}
-        <div className="flex items-center justify-between border-t border-white/10 bg-ink-950/60 px-5 py-3 font-mono text-[0.6rem] uppercase tracking-widest text-mist-dim">
+        <div className="flex items-center justify-between rounded-b-3xl border-t border-white/10 bg-ink-950/60 px-5 py-3 font-mono text-[0.6rem] uppercase tracking-widest text-mist-dim">
           <span>{tab === "before" ? "Scene 01 · The old desk" : "Scene 02 · The 360 desk"}</span>
           <span className="flex items-center gap-2">
             <span
@@ -939,6 +1072,7 @@ export default function GsaStory({
             {tab === "before" ? "6 faults active" : "All clear"}
           </span>
         </div>
+      </div>
       </div>
     </div>
   );
