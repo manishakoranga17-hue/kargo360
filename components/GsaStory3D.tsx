@@ -794,6 +794,31 @@ export default function GsaStory3D({
     core.scale.setScalar(0.001);
     scene.add(core);
 
+    // "Kargo360" wordmark floating above the core
+    const brandCanvas = document.createElement("canvas");
+    brandCanvas.width = 1024;
+    brandCanvas.height = 224;
+    const bctx = brandCanvas.getContext("2d")!;
+    bctx.textAlign = "left";
+    bctx.textBaseline = "middle";
+    bctx.font = "700 120px system-ui, -apple-system, sans-serif";
+    const wKargo = bctx.measureText("Kargo").width;
+    const wAll = wKargo + bctx.measureText("360").width;
+    const x0 = (brandCanvas.width - wAll) / 2;
+    bctx.shadowColor = "rgba(255,47,69,0.55)";
+    bctx.shadowBlur = 28;
+    bctx.fillStyle = "#ffffff";
+    bctx.fillText("Kargo", x0, 118);
+    bctx.fillStyle = "#ff2f45";
+    bctx.fillText("360", x0 + wKargo, 118);
+    const brandTex = new THREE.CanvasTexture(brandCanvas);
+    brandTex.colorSpace = THREE.SRGBColorSpace;
+    const brandMat = new THREE.SpriteMaterial({ map: brandTex, transparent: true, opacity: 0, depthWrite: false });
+    const brand = new THREE.Sprite(brandMat);
+    brand.scale.set(4.0, 0.875, 1);
+    brand.position.set(0, 4.55, -4.2);
+    scene.add(brand);
+
     /* --- beams: each desk plugs into the core --- */
     const beams: { tube: THREE.Mesh; curve: THREE.QuadraticBezierCurve3; pulse: THREE.Mesh }[] = [];
     deskMonitors.forEach((from) => {
@@ -916,6 +941,8 @@ export default function GsaStory3D({
       core.rotation.y = t * 0.25;
       halo.scale.setScalar(1 + Math.sin(t * 1.4) * 0.04);
       haloMat.opacity = 0.55 * coreP;
+      brandMat.opacity = coreP;
+      brand.position.y = 4.55 + Math.sin(t * 1.2) * 0.06;
       coreLight.intensity = 24 * coreP;
       redLight.intensity = 16 * (1 - avgP * 0.7) * (0.82 + Math.sin(t * 7) * 0.18 * (1 - avgP));
 
@@ -986,6 +1013,7 @@ export default function GsaStory3D({
           (Array.isArray(m.material) ? m.material : [m.material]).forEach((mm) => mm.dispose());
         }
       });
+      brandTex.dispose();
       composer.dispose();
       pmrem.dispose();
       renderer.dispose();
