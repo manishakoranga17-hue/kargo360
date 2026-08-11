@@ -7,16 +7,16 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { registerGsap, gsap, ScrollTrigger } from "@/lib/gsap";
+import { registerGsap, ScrollTrigger } from "@/lib/gsap";
 
 const INK = 0x0b0b10;
 const SHELL = 0x14161d;
 const RED = 0xff2f45;
 
-/* ---------- material / geometry helpers ---------- */
+/* ---------- helpers ---------- */
 
 function shellMat(color = SHELL) {
-  return new THREE.MeshStandardMaterial({ color, metalness: 0.55, roughness: 0.42 });
+  return new THREE.MeshStandardMaterial({ color, metalness: 0.5, roughness: 0.45 });
 }
 
 function redGlowMat(intensity = 1.6) {
@@ -29,7 +29,6 @@ function redGlowMat(intensity = 1.6) {
   });
 }
 
-/** white blueprint edge lines for a mesh */
 function addEdges(mesh: THREE.Mesh, opacity = 0.4) {
   const lines = new THREE.LineSegments(
     new THREE.EdgesGeometry(mesh.geometry as THREE.BufferGeometry),
@@ -45,82 +44,215 @@ function box(w: number, h: number, d: number, mat?: THREE.Material) {
   return m;
 }
 
-type Cluster = {
-  group: THREE.Group;
-  chaosPos: THREE.Vector3;
-  orderPos: THREE.Vector3;
-  chaosRot: THREE.Euler;
-  /** red error bits that dissolve as the cluster is fixed */
-  errorBits: THREE.Object3D[];
-  /** parts revealed once fixed */
-  fixedBits: THREE.Object3D[];
-  /** per-frame idle animation; p = 0 chaotic → 1 fixed */
-  tick: (time: number, p: number) => void;
-  p: number;
+function capsule(r: number, len: number, mat: THREE.Material) {
+  return new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 10), mat);
+}
+
+const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+
+const smooth = (a: number, b: number, x: number) => {
+  const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return k * k * (3 - 2 * k);
 };
 
-/* ---------- the ten challenge stations ---------- */
+/* ---------- a seated operator ---------- */
 
-// 1 · Managing multiple airline contracts — fanned contract docs with seals
-function makeContracts(): Cluster {
+type Person = {
+  group: THREE.Group;
+  /** relax: 0 stressed → 1 at ease */
+  setPose: (t: number, relax: number) => void;
+};
+
+/**
+ * variant 0: both hands hammering the keyboard
+ * variant 1: one hand pressed to the head
+ * variant 2: phone clamped to the ear
+ */
+function makePerson(variant: number, seed: number): Person {
+  const g = new THREE.Group();
+  const bodyMat = shellMat(0x232733);
+  const darkMat = shellMat(0x1a1d26);
+
+  // chair
+  const seat = box(0.52, 0.06, 0.5, darkMat);
+  seat.position.y = 0.6;
+  const back = box(0.5, 0.6, 0.06, darkMat);
+  back.position.set(0, 0.95, -0.27);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.28, 8), darkMat);
+  stem.position.y = 0.44;
+  g.add(seat, back, stem);
+
+  // legs (mostly under the desk)
+  const thigh = capsule(0.075, 0.26, bodyMat);
+  thigh.rotation.x = Math.PI / 2;
+  thigh.position.set(0.09, 0.68, 0.18);
+  const thigh2 = thigh.clone();
+  thigh2.position.x = -0.09;
+  const shin = capsule(0.065, 0.28, bodyMat);
+  shin.position.set(0.09, 0.5, 0.32);
+  const shin2 = shin.clone();
+  shin2.position.x = -0.09;
+  g.add(thigh, thigh2, shin, shin2);
+
+  // torso pivots at the hips
+  const torsoG = new THREE.Group();
+  torsoG.position.set(0, 0.68, -0.02);
+  g.add(torsoG);
+  const torso = capsule(0.17, 0.4, bodyMat);
+  torso.position.y = 0.34;
+  torsoG.add(torso);
+
+  // head
+  const headG = new THREE.Group();
+  headG.position.set(0, 0.66, 0.02);
+  torsoG.add(headG);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 18, 14), shellMat(0x2b2f3c));
+  head.position.y = 0.1;
+  headG.add(head);
+  const hair = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    darkMat
+  );
+  hair.position.set(0, 0.115, -0.02);
+  hair.rotation.x = -0.35;
+  headG.add(hair);
+  if (variant === 1) {
+    const bun = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), darkMat);
+    bun.position.set(0, 0.2, -0.13);
+    headG.add(bun);
+  }
+
+  // arms: shoulder → elbow → forearm
+  const mkArm = (side: 1 | -1) => {
+    const shoulder = new THREE.Group();
+    shoulder.position.set(0.21 * side, 0.5, 0.03);
+    torsoG.add(shoulder);
+    const upper = capsule(0.055, 0.24, bodyMat);
+    upper.position.y = -0.15;
+    shoulder.add(upper);
+    const elbow = new THREE.Group();
+    elbow.position.y = -0.3;
+    shoulder.add(elbow);
+    const fore = capsule(0.05, 0.22, bodyMat);
+    fore.position.y = -0.14;
+    elbow.add(fore);
+    return { shoulder, elbow };
+  };
+  const armL = mkArm(-1);
+  const armR = mkArm(1);
+
+  // phone in hand for the caller
+  if (variant === 2) {
+    const phone = box(0.07, 0.16, 0.03, darkMat);
+    phone.position.set(0, -0.3, 0.03);
+    armR.elbow.add(phone);
+  }
+
+  // floating stress mark above the head
+  const mark = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.16, 0.05), redGlowMat(1.6));
+  mark.position.set(0.16, 1.62, 0);
+  const dot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), redGlowMat(1.6));
+  dot.position.set(0.16, 1.48, 0);
+  g.add(mark, dot);
+
+  const setPose = (t: number, relax: number) => {
+    const r = relax;
+    const s = 1 - r;
+    // torso: hunched forward → leaning back
+    torsoG.rotation.x =
+      lerp(0.44, -0.14, r) + Math.sin(t * (7 + seed)) * 0.012 * s + Math.sin(t * 1.1 + seed) * 0.02 * r;
+    // head: down and shaking → up, easy
+    headG.rotation.x = lerp(0.3, -0.08, r);
+    headG.rotation.y = Math.sin(t * (4.5 + seed)) * 0.09 * s + Math.sin(t * 0.7 + seed) * 0.05 * r;
+
+    if (variant === 0) {
+      // typing hard → hands resting
+      armL.shoulder.rotation.x = lerp(-1.05, -0.35, r);
+      armR.shoulder.rotation.x = lerp(-1.12, -0.35, r);
+      armL.elbow.rotation.x = lerp(-0.55, -0.3, r) + Math.sin(t * 11 + seed) * 0.1 * s;
+      armR.elbow.rotation.x = lerp(-0.5, -0.3, r) + Math.cos(t * 12 + seed) * 0.1 * s;
+    } else if (variant === 1) {
+      // left hand types, right hand pressed to the head → both at ease
+      armL.shoulder.rotation.x = lerp(-1.05, -0.35, r);
+      armL.elbow.rotation.x = lerp(-0.5, -0.3, r) + Math.sin(t * 10 + seed) * 0.09 * s;
+      armR.shoulder.rotation.x = lerp(-2.15, -0.4, r);
+      armR.shoulder.rotation.z = lerp(-0.55, -0.05, r);
+      armR.elbow.rotation.x = lerp(-1.95, -0.35, r);
+    } else {
+      // phone at the ear → phone set down
+      armL.shoulder.rotation.x = lerp(-1.0, -0.35, r);
+      armL.elbow.rotation.x = lerp(-0.5, -0.3, r);
+      armR.shoulder.rotation.x = lerp(-2.3, -0.45, r);
+      armR.shoulder.rotation.z = lerp(-0.3, -0.05, r);
+      armR.elbow.rotation.x = lerp(-2.05, -0.4, r);
+    }
+
+    // stress mark blinks away as calm arrives
+    const blink = (0.8 + Math.sin(t * 6 + seed) * 0.5) * s;
+    (mark.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.6 * blink;
+    (dot.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.6 * blink;
+    mark.visible = dot.visible = s > 0.03;
+  };
+
+  return { group: g, setPose };
+}
+
+/* ---------- problem props (resolve in place; p: 0 broken → 1 solved) ---------- */
+
+type Prop = { group: THREE.Group; tick: (t: number, p: number) => void };
+
+// contracts fanned mid-air with a red seal → neat stack
+function makeContracts(): Prop {
   const g = new THREE.Group();
   const docs: THREE.Mesh[] = [];
   const chaos: { pos: THREE.Vector3; rot: THREE.Euler }[] = [];
-  for (let i = 0; i < 6; i++) {
-    const d = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.02, 0.56), shellMat(i === 2 ? 0x3a2026 : 0x262933));
-    addEdges(d, 0.25);
+  for (let i = 0; i < 5; i++) {
+    const d = new THREE.Mesh(
+      new THREE.BoxGeometry(0.34, 0.016, 0.44),
+      shellMat(i === 2 ? 0x3a2026 : 0x262933)
+    );
+    addEdges(d, 0.3);
     chaos.push({
-      pos: new THREE.Vector3(Math.sin(i * 2.2) * 0.6, 0.3 + (i % 3) * 0.34, Math.cos(i * 1.5) * 0.45),
-      rot: new THREE.Euler(Math.sin(i * 3) * 0.45, i * 0.9, Math.cos(i * 2) * 0.4),
+      pos: new THREE.Vector3(Math.sin(i * 2.2) * 0.35, 0.2 + (i % 3) * 0.24, Math.cos(i * 1.5) * 0.3),
+      rot: new THREE.Euler(Math.sin(i * 3) * 0.4, i * 0.9, Math.cos(i * 2) * 0.35),
     });
     g.add(d);
     docs.push(d);
   }
-  const seals: THREE.Mesh[] = [];
-  for (let i = 0; i < 2; i++) {
-    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.025, 12), redGlowMat(1.1));
-    g.add(seal);
-    seals.push(seal);
-  }
+  const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.02, 12), redGlowMat(1.1));
+  g.add(seal);
   return {
     group: g,
-    chaosPos: new THREE.Vector3(7.4, 1.4, 3.4),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0, 0.5, 0),
-    errorBits: [],
-    fixedBits: [],
-    p: 0,
     tick: (t, p) => {
       docs.forEach((d, i) => {
         const c = chaos[i];
-        const stackY = 0.1 + i * 0.04;
         d.position.set(
-          c.pos.x * (1 - p) + Math.sin(t * 0.9 + i) * 0.06 * (1 - p),
-          c.pos.y * (1 - p) + stackY * p,
+          c.pos.x * (1 - p) + Math.sin(t * 0.9 + i) * 0.04 * (1 - p),
+          c.pos.y * (1 - p) + (0.05 + i * 0.03) * p,
           c.pos.z * (1 - p)
         );
         d.rotation.set(c.rot.x * (1 - p), c.rot.y * (1 - p), c.rot.z * (1 - p));
       });
-      seals.forEach((seal, i) => {
-        const d = docs[i * 2 + 1];
-        seal.position.set(d.position.x + 0.12, d.position.y + 0.03, d.position.z + 0.14);
-        seal.rotation.copy(d.rotation);
-      });
+      seal.position.set(docs[3].position.x + 0.08, docs[3].position.y + 0.025, docs[3].position.z + 0.1);
+      seal.rotation.copy(docs[3].rotation);
     },
   };
 }
 
-// 2 · Handling multiple customer quotations — quote slips swirling in the air
-function makeQuotes(): Cluster {
+// quotation slips swirling → tidy tray
+function makeQuotes(): Prop {
   const g = new THREE.Group();
   const slips: THREE.Group[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     const slip = new THREE.Group();
-    const env = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.03, 0.3), shellMat(0x262933));
-    addEdges(env, 0.3);
+    const env = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.2), shellMat(0x262933));
+    addEdges(env, 0.35);
     slip.add(env);
-    const flap = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.015, 0.18), shellMat(i === 0 ? 0x3a2026 : 0x1d2029));
-    flap.position.set(0, 0.025, -0.04);
+    const flap = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2, 0.012, 0.12),
+      shellMat(i === 0 ? 0x3a2026 : 0x1d2029)
+    );
+    flap.position.set(0, 0.018, -0.03);
     flap.rotation.x = 0.5;
     slip.add(flap);
     g.add(slip);
@@ -128,73 +260,58 @@ function makeQuotes(): Cluster {
   }
   return {
     group: g,
-    chaosPos: new THREE.Vector3(6.2, 0.7, 5.6),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0.1, -0.4, 0),
-    errorBits: [],
-    fixedBits: [],
-    p: 0,
     tick: (t, p) => {
       slips.forEach((slip, i) => {
-        const a = t * 0.7 + (i * Math.PI * 2) / 5;
-        // swirl in a loose cyclone → settle into a tidy tray stack
+        const a = t * 0.8 + (i * Math.PI * 2) / 4;
         slip.position.set(
-          Math.cos(a) * 0.75 * (1 - p),
-          (0.4 + i * 0.22 + Math.sin(a * 1.3) * 0.15) * (1 - p) + (0.1 + i * 0.05) * p,
-          Math.sin(a) * 0.55 * (1 - p)
+          Math.cos(a) * 0.3 * (1 - p),
+          (0.3 + i * 0.16 + Math.sin(a * 1.3) * 0.1) * (1 - p) + (0.05 + i * 0.035) * p,
+          Math.sin(a) * 0.24 * (1 - p)
         );
-        slip.rotation.set(
-          Math.sin(a) * 0.4 * (1 - p),
-          a * (1 - p),
-          Math.cos(a * 0.8) * 0.3 * (1 - p)
-        );
+        slip.rotation.set(Math.sin(a) * 0.35 * (1 - p), a * (1 - p), Math.cos(a * 0.8) * 0.25 * (1 - p));
       });
     },
   };
 }
 
-// 3 · Revenue limited by manual operations — grinding gears, jerky and sparking
-function makeGears(): Cluster {
+// jerky sparking gears → smooth spin
+function makeGears(): Prop {
   const g = new THREE.Group();
   const mk = (r: number, x: number, y: number) => {
-    const gear = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.13, 9), shellMat(0x1b1e27));
+    const gear = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.09, 9), shellMat(0x1b1e27));
     addEdges(gear, 0.45);
     gear.rotation.x = Math.PI / 2;
     gear.position.set(x, y, 0);
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.3, r * 0.3, 0.16, 9), shellMat(0x2a2d38));
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.3, r * 0.3, 0.12, 9), shellMat(0x2a2d38));
     hub.rotation.x = Math.PI / 2;
     hub.position.copy(gear.position);
     g.add(gear, hub);
     return gear;
   };
-  const g1 = mk(0.48, -0.35, 0.55);
-  const g2 = mk(0.34, 0.42, 0.82);
-  const g3 = mk(0.27, 0.5, 0.22);
+  const g1 = mk(0.3, -0.22, 0.34);
+  const g2 = mk(0.21, 0.27, 0.5);
+  const g3 = mk(0.17, 0.32, 0.14);
   const sparks: THREE.Line[] = [];
   for (let i = 0; i < 2; i++) {
     const geo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0.02 + i * 0.05, 0.62, 0.1),
-      new THREE.Vector3(0.16 + i * 0.06, 0.75 + i * 0.08, 0.12),
+      new THREE.Vector3(0.02 + i * 0.03, 0.4, 0.06),
+      new THREE.Vector3(0.11 + i * 0.04, 0.5 + i * 0.05, 0.08),
     ]);
-    const l = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: RED, transparent: true, opacity: 0.9 }));
+    const l = new THREE.Line(
+      geo,
+      new THREE.LineBasicMaterial({ color: RED, transparent: true, opacity: 0.9 })
+    );
     g.add(l);
     sparks.push(l);
   }
   return {
     group: g,
-    chaosPos: new THREE.Vector3(4.4, 1.3, 3.0),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0.15, 0.6, -0.05),
-    errorBits: sparks,
-    fixedBits: [],
-    p: 0,
     tick: (t, p) => {
-      // jerky stalls before, smooth spin after
       const jerky = Math.floor(t * 1.6) / 1.6;
       const rot = jerky * (1 - p) + t * 1.1 * p;
       g1.rotation.y = rot;
-      g2.rotation.y = -rot * 1.4;
-      g3.rotation.y = rot * 1.75;
+      g2.rotation.y = -rot * 1.45;
+      g3.rotation.y = rot * 1.8;
       sparks.forEach((l, i) => {
         (l.material as THREE.LineBasicMaterial).opacity =
           (Math.sin(t * 9 + i * 2) > 0.55 ? 0.9 : 0) * (1 - p);
@@ -203,39 +320,33 @@ function makeGears(): Cluster {
   };
 }
 
-// 4 · Difficulty scaling operations — a toppled stack that rebuilds into a pyramid
-function makeScaling(): Cluster {
+// toppled boxes → tidy pyramid
+function makeScaling(): Prop {
   const g = new THREE.Group();
   const cubes: THREE.Mesh[] = [];
-  const chaos: { pos: THREE.Vector3; rot: THREE.Euler }[] = [
-    { pos: new THREE.Vector3(0, 0.17, 0), rot: new THREE.Euler(0, 0.3, 0) },
-    { pos: new THREE.Vector3(0.55, 0.17, 0.35), rot: new THREE.Euler(0, 0.8, 0.4) },
-    { pos: new THREE.Vector3(-0.6, 0.17, 0.25), rot: new THREE.Euler(0.5, 0.2, 0) },
-    { pos: new THREE.Vector3(0.18, 0.5, 0.02), rot: new THREE.Euler(0, 0.6, 0.25) },
-    { pos: new THREE.Vector3(0.95, 0.17, -0.25), rot: new THREE.Euler(0.4, 0, 0.9) },
-    { pos: new THREE.Vector3(-0.3, 0.17, -0.55), rot: new THREE.Euler(0, 1.1, 0.5) },
+  const chaos = [
+    { pos: new THREE.Vector3(0, 0.11, 0), rot: new THREE.Euler(0, 0.3, 0) },
+    { pos: new THREE.Vector3(0.36, 0.11, 0.24), rot: new THREE.Euler(0, 0.8, 0.4) },
+    { pos: new THREE.Vector3(-0.4, 0.11, 0.16), rot: new THREE.Euler(0.5, 0.2, 0) },
+    { pos: new THREE.Vector3(0.12, 0.33, 0.02), rot: new THREE.Euler(0, 0.6, 0.25) },
+    { pos: new THREE.Vector3(0.62, 0.11, -0.16), rot: new THREE.Euler(0.4, 0, 0.9) },
+    { pos: new THREE.Vector3(-0.2, 0.11, -0.36), rot: new THREE.Euler(0, 1.1, 0.5) },
   ];
   const order = [
-    new THREE.Vector3(-0.4, 0.17, 0),
-    new THREE.Vector3(0, 0.17, 0),
-    new THREE.Vector3(0.4, 0.17, 0),
-    new THREE.Vector3(-0.2, 0.51, 0),
-    new THREE.Vector3(0.2, 0.51, 0),
-    new THREE.Vector3(0, 0.85, 0),
+    new THREE.Vector3(-0.26, 0.11, 0),
+    new THREE.Vector3(0, 0.11, 0),
+    new THREE.Vector3(0.26, 0.11, 0),
+    new THREE.Vector3(-0.13, 0.33, 0),
+    new THREE.Vector3(0.13, 0.33, 0),
+    new THREE.Vector3(0, 0.55, 0),
   ];
   for (let i = 0; i < 6; i++) {
-    const c = box(0.34, 0.34, 0.34, shellMat(i === 5 ? 0x3a2026 : 0x22252f));
+    const c = box(0.22, 0.22, 0.22, shellMat(i === 5 ? 0x3a2026 : 0x22252f));
     g.add(c);
     cubes.push(c);
   }
   return {
     group: g,
-    chaosPos: new THREE.Vector3(3.2, 0.3, 5.6),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0, -0.5, 0),
-    errorBits: [],
-    fixedBits: [],
-    p: 0,
     tick: (_t, p) => {
       cubes.forEach((c, i) => {
         c.position.lerpVectors(chaos[i].pos, order[i], p);
@@ -245,37 +356,34 @@ function makeScaling(): Cluster {
   };
 }
 
-// 5 · Limited visibility into performance — a dead dashboard flatlining
-function makeVisibility(): Cluster {
+// flatlined performance display → live rising bars
+function makeVisibility(): Prop {
   const g = new THREE.Group();
-  const panel = box(1.2, 0.82, 0.09, shellMat(0x121319));
-  panel.position.y = 0.95;
+  const panel = box(1.05, 0.72, 0.07, shellMat(0x121319));
+  panel.position.y = 1.35;
   g.add(panel);
-  const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.55, 8), shellMat(0x2a2d38));
-  stand.position.y = 0.28;
+  const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.0, 8), shellMat(0x2a2d38));
+  stand.position.y = 0.5;
   g.add(stand);
-  const flat = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.028, 0.02), redGlowMat(1.5));
-  flat.position.set(0, 0.95, 0.06);
+  const foot = box(0.5, 0.04, 0.3, shellMat(0x1a1d26));
+  foot.position.y = 0.02;
+  g.add(foot);
+  const flat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.024, 0.02), redGlowMat(1.5));
+  flat.position.set(0, 1.35, 0.05);
   g.add(flat);
   const bars: THREE.Mesh[] = [];
-  const hs = [0.16, 0.28, 0.22, 0.38, 0.5];
+  const hs = [0.14, 0.24, 0.19, 0.32, 0.42];
   hs.forEach((h, i) => {
     const b = new THREE.Mesh(
-      new THREE.BoxGeometry(0.13, h, 0.03),
+      new THREE.BoxGeometry(0.11, h, 0.03),
       i === 3 ? redGlowMat(1.2) : shellMat(0x3a3f4d)
     );
-    b.position.set(-0.4 + i * 0.2, 0, 0.06);
+    b.position.set(-0.34 + i * 0.17, 0, 0.05);
     g.add(b);
     bars.push(b);
   });
   return {
     group: g,
-    chaosPos: new THREE.Vector3(1.4, 1.7, 3.4),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(-0.12, 0.4, 0.1),
-    errorBits: [flat],
-    fixedBits: bars,
-    p: 0,
     tick: (t, p) => {
       (flat.material as THREE.MeshStandardMaterial).emissiveIntensity =
         (1.1 + Math.sin(t * 2.4) * 0.5) * (1 - p);
@@ -284,54 +392,48 @@ function makeVisibility(): Cluster {
         const grow = Math.max(0.001, p * (0.75 + Math.sin(t * 1.4 + i) * 0.25));
         b.scale.y = grow;
         const h = (b.geometry as THREE.BoxGeometry).parameters.height;
-        b.position.y = 0.62 + (h * grow) / 2;
+        b.position.y = 1.06 + (h * grow) / 2;
       });
     },
   };
 }
 
-// 6 · Uncertainty in profitability — a balance that can't stop tipping
-function makeBalance(): Cluster {
+// tipping balance → level
+function makeBalance(): Prop {
   const g = new THREE.Group();
-  const wedge = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.3, 0.42, 4), shellMat(0x22252f));
-  wedge.position.y = 0.21;
+  const wedge = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.2, 0.28, 4), shellMat(0x22252f));
+  wedge.position.y = 0.14;
   addEdges(wedge, 0.4);
   g.add(wedge);
   const plankG = new THREE.Group();
-  plankG.position.y = 0.44;
-  const plank = box(1.5, 0.05, 0.3, shellMat(0x2a2d38));
+  plankG.position.y = 0.3;
+  const plank = box(1.0, 0.035, 0.2, shellMat(0x2a2d38));
   plankG.add(plank);
-  const w1 = box(0.24, 0.24, 0.24, shellMat(0x22252f));
-  w1.position.set(-0.6, 0.15, 0);
-  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), redGlowMat(0.9));
-  w2.position.set(0.62, 0.13, 0);
+  const w1 = box(0.16, 0.16, 0.16, shellMat(0x22252f));
+  w1.position.set(-0.4, 0.1, 0);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.13), redGlowMat(0.9));
+  w2.position.set(0.41, 0.09, 0);
   plankG.add(w1, w2);
   g.add(plankG);
   return {
     group: g,
-    chaosPos: new THREE.Vector3(-0.4, 0.4, 5.8),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0, 0.7, 0),
-    errorBits: [],
-    fixedBits: [],
-    p: 0,
     tick: (t, p) => {
       plankG.rotation.z = Math.sin(t * 1.7) * 0.24 * (1 - p);
     },
   };
 }
 
-// 7 · Underutilized flight capacity — a half-empty ghost ULD that fills solid
-function makeCapacity(): Cluster {
+// ghost ULD, meter at 42% → solid, 100%
+function makeCapacity(): Prop {
   const g = new THREE.Group();
   const shape = new THREE.Shape();
-  shape.moveTo(-0.55, 0);
-  shape.lineTo(0.55, 0);
-  shape.lineTo(0.55, 0.8);
-  shape.lineTo(-0.25, 0.8);
-  shape.lineTo(-0.55, 0.5);
+  shape.moveTo(-0.42, 0);
+  shape.lineTo(0.42, 0);
+  shape.lineTo(0.42, 0.62);
+  shape.lineTo(-0.19, 0.62);
+  shape.lineTo(-0.42, 0.38);
   shape.closePath();
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.62, bevelEnabled: false });
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.48, bevelEnabled: false });
   const fillMat = new THREE.MeshStandardMaterial({
     color: SHELL,
     metalness: 0.5,
@@ -340,190 +442,101 @@ function makeCapacity(): Cluster {
     opacity: 0.14,
   });
   const uld = new THREE.Mesh(geo, fillMat);
-  uld.position.z = -0.31;
+  uld.position.z = -0.24;
   const lines = new THREE.LineSegments(
     new THREE.EdgesGeometry(geo),
     new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })
   );
   uld.add(lines);
   g.add(uld);
-  // load meter
-  const meterBg = box(0.09, 0.8, 0.06, shellMat(0x191b22));
-  meterBg.position.set(0.78, 0.4, 0);
+  const meterBg = box(0.07, 0.62, 0.05, shellMat(0x191b22));
+  meterBg.position.set(0.6, 0.31, 0);
   g.add(meterBg);
-  const meterFill = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.8, 0.05), redGlowMat(1.2));
+  const meterFill = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.62, 0.04), redGlowMat(1.2));
   g.add(meterFill);
   return {
     group: g,
-    chaosPos: new THREE.Vector3(-2.4, 0.9, 3.2),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0.1, 0.8, 0),
-    errorBits: [],
-    fixedBits: [],
-    p: 0,
-    tick: (t, p) => {
+    tick: (_t, p) => {
       fillMat.opacity = 0.14 + 0.72 * p;
       const load = 0.42 + 0.58 * p;
       meterFill.scale.y = load;
-      meterFill.position.set(0.78, 0.4 * load, 0);
+      meterFill.position.set(0.6, 0.31 * load, 0);
     },
   };
 }
 
-// 8 · Slow customer response — the phone ringing off the hook
-function makePhone(): Cluster {
+// desk phone ringing off the hook → quiet, checked
+function makePhoneProp(): Prop {
   const g = new THREE.Group();
-  const body = box(1.1, 0.36, 0.65);
-  body.position.y = 0.18;
+  const body = box(0.5, 0.16, 0.3);
+  body.position.y = 0.08;
   g.add(body);
-  const handset = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.08, 10, 24, Math.PI), shellMat(0x1b1d26));
-  handset.position.set(0, 0.44, 0);
+  const handset = new THREE.Mesh(
+    new THREE.TorusGeometry(0.2, 0.04, 8, 20, Math.PI),
+    shellMat(0x1b1d26)
+  );
+  handset.position.set(0, 0.2, 0);
   g.add(handset);
-  const earL = box(0.22, 0.16, 0.26, shellMat(0x1b1d26));
-  earL.position.set(-0.46, 0.46, 0);
-  const earR = box(0.22, 0.16, 0.26, shellMat(0x1b1d26));
-  earR.position.set(0.46, 0.46, 0);
-  g.add(earL, earR);
   const rings: THREE.Mesh[] = [];
   for (let i = 0; i < 3; i++) {
     const r = new THREE.Mesh(
-      new THREE.TorusGeometry(0.34 + i * 0.2, 0.018, 8, 40),
+      new THREE.TorusGeometry(0.16 + i * 0.1, 0.01, 8, 32),
       new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: 0.6 })
     );
     r.rotation.x = Math.PI / 2;
-    r.position.y = 0.78 + i * 0.24;
+    r.position.y = 0.36 + i * 0.12;
     g.add(r);
     rings.push(r);
   }
-  // instant-response panel, revealed when fixed
-  const chat = box(0.6, 0.42, 0.06, shellMat(0x191b22));
-  chat.position.y = 0.95;
-  chat.scale.setScalar(0.001);
-  const tick = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 30), redGlowMat(1.4));
-  tick.position.z = 0.05;
-  chat.add(tick);
-  g.add(chat);
+  const tickMesh = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.02, 8, 24), redGlowMat(1.4));
+  tickMesh.position.y = 0.42;
+  tickMesh.scale.setScalar(0.001);
+  g.add(tickMesh);
   return {
     group: g,
-    chaosPos: new THREE.Vector3(-4.4, 0.7, 5.6),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0.2, -0.6, -0.1),
-    errorBits: rings,
-    fixedBits: [chat],
-    p: 0,
     tick: (t, p) => {
       rings.forEach((r, i) => {
         const ph = (t * 0.9 + i * 0.33) % 1;
         r.scale.setScalar(0.7 + ph * 0.7);
         (r.material as THREE.MeshBasicMaterial).opacity = (1 - ph) * 0.6 * (1 - p);
       });
-      handset.position.y = 0.44 + Math.sin(t * 14) * 0.02 * (1 - p);
-      chat.scale.setScalar(Math.max(0.001, p));
+      handset.position.y = 0.2 + Math.sin(t * 14) * 0.012 * (1 - p);
+      tickMesh.scale.setScalar(Math.max(0.001, p));
+      tickMesh.rotation.y = t * 0.6;
     },
   };
 }
 
-// 9 · High technology investment — a server rack burning through coins
-function makeTechCost(): Cluster {
+// server rack burning coins → lean and steady
+function makeTechCost(): Prop {
   const g = new THREE.Group();
-  const rack = box(0.7, 1.35, 0.6, shellMat(0x191b22));
-  rack.position.y = 0.68;
+  const rack = box(0.5, 1.0, 0.45, shellMat(0x191b22));
+  rack.position.y = 0.5;
   g.add(rack);
   const leds: THREE.Mesh[] = [];
   for (let i = 0; i < 3; i++) {
-    const led = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.02), redGlowMat(1.4));
-    led.position.set(0, 0.35 + i * 0.35, 0.32);
+    const led = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.02), redGlowMat(1.4));
+    led.position.set(0, 0.26 + i * 0.26, 0.24);
     g.add(led);
     leds.push(led);
   }
   const coins: THREE.Mesh[] = [];
   for (let i = 0; i < 4; i++) {
-    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.05, 16), shellMat(0x3a3d48));
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.035, 14), shellMat(0x3a3d48));
     addEdges(coin, 0.3);
-    coin.position.set(0.62, 0.03 + i * 0.055, 0.15);
+    coin.position.set(0.42, 0.02 + i * 0.04, 0.1);
     if (i === 3) coin.rotation.z = 0.4;
     g.add(coin);
     coins.push(coin);
   }
   return {
     group: g,
-    chaosPos: new THREE.Vector3(-6.0, 0.3, 3.2),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0, 0.9, 0),
-    errorBits: [...leds, ...coins],
-    fixedBits: [],
-    p: 0,
     tick: (t, p) => {
       leds.forEach((led, i) => {
         (led.material as THREE.MeshStandardMaterial).emissiveIntensity =
           (0.5 + Math.abs(Math.sin(t * 6 + i * 1.3))) * (1 - p) + 0.5 * p;
       });
-      coins.forEach((coin, i) => {
-        coin.scale.setScalar(Math.max(0.001, 1 - p));
-      });
-    },
-  };
-}
-
-// 10 · Disconnected cargo ecosystem — silos with broken links, then one network
-function makeSilos(): Cluster {
-  const g = new THREE.Group();
-  const a = box(0.85, 1.05, 0.5);
-  const b = box(0.85, 1.3, 0.5);
-  const c = box(0.85, 0.85, 0.5);
-  a.position.set(-1.1, 0.52, 0.35);
-  b.position.set(0.15, 0.65, -0.4);
-  c.position.set(1.25, 0.42, 0.3);
-  g.add(a, b, c);
-  const linkMat = new THREE.LineBasicMaterial({ color: RED, transparent: true, opacity: 0.9 });
-  const links: THREE.Line[] = [];
-  const mk = (pts: number[][]) => {
-    const geo = new THREE.BufferGeometry().setFromPoints(pts.map((p) => new THREE.Vector3(...p)));
-    const l = new THREE.Line(geo, linkMat.clone());
-    links.push(l);
-    g.add(l);
-  };
-  mk([
-    [-0.65, 0.75, 0.3],
-    [-0.4, 0.9, 0.1],
-  ]);
-  mk([
-    [-0.05, 1.0, -0.1],
-    [-0.28, 0.95, 0.02],
-  ]);
-  mk([
-    [0.62, 0.7, -0.2],
-    [0.85, 0.6, 0.05],
-  ]);
-  const cleanMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-  const clean: THREE.Line[] = [];
-  const mkClean = (from: number[], to: number[]) => {
-    const geo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(...from),
-      new THREE.Vector3(...to),
-    ]);
-    const l = new THREE.Line(geo, cleanMat.clone());
-    clean.push(l);
-    g.add(l);
-  };
-  mkClean([-1.1, 0.6, 0.35], [0.15, 0.75, -0.4]);
-  mkClean([0.15, 0.75, -0.4], [1.25, 0.5, 0.3]);
-  return {
-    group: g,
-    chaosPos: new THREE.Vector3(-7.4, 0.6, 5.6),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0.1, 0.35, -0.08),
-    errorBits: links,
-    fixedBits: clean,
-    p: 0,
-    tick: (t, p) => {
-      links.forEach((l, i) => {
-        (l.material as THREE.LineBasicMaterial).opacity =
-          (0.4 + 0.6 * Math.abs(Math.sin(t * 5 + i * 1.7))) * (1 - p);
-      });
-      clean.forEach((l) => {
-        (l.material as THREE.LineBasicMaterial).opacity = 0.55 * p;
-      });
+      coins.forEach((coin) => coin.scale.setScalar(Math.max(0.001, 1 - p)));
     },
   };
 }
@@ -561,7 +574,7 @@ export default function GsaStory3D({
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(INK, 0.038);
+    scene.fog = new THREE.FogExp2(INK, 0.04);
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     scene.environmentIntensity = 0.42;
@@ -569,7 +582,7 @@ export default function GsaStory3D({
 
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.42, 0.8, 0.24);
+    const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.4, 0.8, 0.24);
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
 
@@ -579,88 +592,213 @@ export default function GsaStory3D({
     const key = new THREE.DirectionalLight(0xffffff, 1.1);
     key.position.set(6, 10, 8);
     scene.add(key);
-    const redLight = new THREE.PointLight(RED, 20, 30, 1.8);
-    redLight.position.set(1, 3.5, 5);
+    const redLight = new THREE.PointLight(RED, 16, 26, 1.8);
+    redLight.position.set(0, 3.2, 2);
     scene.add(redLight);
     const coreLight = new THREE.PointLight(0xfff0ee, 0, 24, 1.6);
-    coreLight.position.set(0, 2.2, 0);
+    coreLight.position.set(0, 3.0, -3.4);
     scene.add(coreLight);
 
-    /* --- floor grid --- */
+    /* --- floor --- */
     const grid = new THREE.GridHelper(70, 70, 0x2a2a32, 0x16161c);
-    grid.position.y = -1.6;
+    grid.position.y = 0;
     scene.add(grid);
 
-    /* --- clusters --- */
-    const clusters: Cluster[] = [
-      makeContracts(),
-      makeQuotes(),
-      makeGears(),
-      makeScaling(),
-      makeVisibility(),
-      makeBalance(),
-      makeCapacity(),
-      makePhone(),
-      makeTechCost(),
-      makeSilos(),
+    /* --- the ops room: three desks, three people --- */
+    const DESKS = [
+      { pos: new THREE.Vector3(-4.6, 0, 0.2), rotY: 0.42 },
+      { pos: new THREE.Vector3(0, 0, -1.0), rotY: -0.06 },
+      { pos: new THREE.Vector3(4.6, 0, 0.2), rotY: -0.42 },
     ];
-    // ordered ring positions around the core
-    clusters.forEach((c, i) => {
-      const a = (-90 - (i * 360) / clusters.length) * (Math.PI / 180);
-      c.orderPos.set(Math.cos(a) * 5.5, -0.4, Math.sin(a) * 5.5 * 0.82);
-      c.group.position.copy(c.chaosPos);
-      c.group.rotation.copy(c.chaosRot);
-      c.group.scale.setScalar(0.82);
-      scene.add(c.group);
+    const people: Person[] = [];
+    const deskMonitors: THREE.Vector3[] = [];
+    DESKS.forEach((d, i) => {
+      const dg = new THREE.Group();
+      dg.position.copy(d.pos);
+      dg.rotation.y = d.rotY;
+      scene.add(dg);
+      // desk
+      const top = box(2.5, 0.07, 1.05, shellMat(0x1a1d26));
+      top.position.y = 1.0;
+      dg.add(top);
+      const legL = box(0.07, 1.0, 0.9, shellMat(0x14161d));
+      legL.position.set(-1.15, 0.5, 0);
+      const legR = box(0.07, 1.0, 0.9, shellMat(0x14161d));
+      legR.position.set(1.15, 0.5, 0);
+      dg.add(legL, legR);
+      // monitor + keyboard
+      const mon = box(0.85, 0.55, 0.05, shellMat(0x121319));
+      mon.position.set(0.05, 1.55, 0.12);
+      dg.add(mon);
+      const monStand = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.025, 0.025, 0.25, 8),
+        shellMat(0x2a2d38)
+      );
+      monStand.position.set(0.05, 1.16, 0.12);
+      dg.add(monStand);
+      const kb = box(0.6, 0.03, 0.2, shellMat(0x22252f));
+      kb.position.set(0.05, 1.06, -0.25);
+      dg.add(kb);
+      // screen glow toward the operator
+      const glow = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.78, 0.48),
+        new THREE.MeshBasicMaterial({
+          color: 0x3a1216,
+          transparent: true,
+          opacity: 0.85,
+          side: THREE.DoubleSide,
+        })
+      );
+      glow.position.set(0.05, 1.55, 0.085);
+      dg.add(glow);
+      // operator
+      const person = makePerson(i, i * 2.1);
+      person.group.position.set(0.05, 0, -0.95);
+      dg.add(person.group);
+      people.push(person);
+      // soft ground shadow
+      const sh = new THREE.Mesh(
+        new THREE.CircleGeometry(1.9, 24),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })
+      );
+      sh.rotation.x = -Math.PI / 2;
+      sh.position.set(d.pos.x, 0.01, d.pos.z - 0.2);
+      scene.add(sh);
+      deskMonitors.push(new THREE.Vector3(d.pos.x, 1.8, d.pos.z));
     });
 
-    /* --- the 360 core --- */
+    /* --- props placed around the desks (indices match the faults array) --- */
+    const place = (prop: Prop, x: number, y: number, z: number, ry = 0) => {
+      prop.group.position.set(x, y, z);
+      prop.group.rotation.y = ry;
+      scene.add(prop.group);
+      return prop;
+    };
+    const props: Prop[] = [
+      place(makeContracts(), -6.1, 1.05, 0.9, 0.3), // 0 contracts — left of desk 1
+      place(makeQuotes(), -4.3, 1.5, 0.85, 0), // 1 quotations — swirling over desk 1
+      place(makeGears(), -1.9, 1.02, 0.4, 0.35), // 2 manual ops — beside desk 2
+      place(makeScaling(), 1.9, 0, 1.1, -0.3), // 3 scaling — floor by desk 2
+      place(makeVisibility(), 7.0, 0, -0.3, -0.7), // 4 visibility — display right of desk 3
+      place(makeBalance(), 5.7, 1.05, 0.75, -0.4), // 5 profitability — on desk 3
+      place(makeCapacity(), 3.0, 0, 2.0, 0.5), // 6 capacity — floor front of desk 3
+      place(makePhoneProp(), -3.7, 1.05, 0.7, 0.2), // 7 response — phone on desk 1
+      place(makeTechCost(), 0.3, 0, -3.4, 0.2), // 8 tech cost — rack behind desk 2
+      { group: new THREE.Group(), tick: () => {} }, // 9 ecosystem — links, built below
+    ];
+
+    // 9 · broken red links floating between the desks → clean white connections
+    {
+      const g = new THREE.Group();
+      const redLinks: THREE.Line[] = [];
+      const whiteLinks: THREE.Line[] = [];
+      const mkSeg = (pts: THREE.Vector3[], color: number, list: THREE.Line[], op: number) => {
+        const l = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(pts),
+          new THREE.LineBasicMaterial({ color, transparent: true, opacity: op })
+        );
+        list.push(l);
+        g.add(l);
+      };
+      mkSeg([new THREE.Vector3(-3.3, 1.55, -0.2), new THREE.Vector3(-2.5, 1.68, -0.5)], RED, redLinks, 0.9);
+      mkSeg([new THREE.Vector3(-2.0, 1.72, -0.6), new THREE.Vector3(-1.4, 1.65, -0.7)], RED, redLinks, 0.9);
+      mkSeg([new THREE.Vector3(1.4, 1.65, -0.7), new THREE.Vector3(2.1, 1.72, -0.5)], RED, redLinks, 0.9);
+      mkSeg([new THREE.Vector3(2.6, 1.68, -0.4), new THREE.Vector3(3.3, 1.55, -0.2)], RED, redLinks, 0.9);
+      mkSeg([deskMonitors[0], deskMonitors[1]], 0xffffff, whiteLinks, 0);
+      mkSeg([deskMonitors[1], deskMonitors[2]], 0xffffff, whiteLinks, 0);
+      scene.add(g);
+      props[9] = {
+        group: g,
+        tick: (t, p) => {
+          redLinks.forEach((l, i) => {
+            (l.material as THREE.LineBasicMaterial).opacity =
+              (0.4 + 0.6 * Math.abs(Math.sin(t * 5 + i * 1.7))) * (1 - p);
+          });
+          whiteLinks.forEach((l) => {
+            (l.material as THREE.LineBasicMaterial).opacity = 0.5 * p;
+          });
+        },
+      };
+    }
+
+    /* --- the 360 core rising behind the room --- */
     const core = new THREE.Group();
-    const hex = new THREE.Mesh(new THREE.CylinderGeometry(1.35, 1.35, 0.5, 6), shellMat(0x181a22));
+    const hex = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.42, 6), shellMat(0x181a22));
     addEdges(hex, 0.6);
     core.add(hex);
-    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.54, 6), redGlowMat(1.5));
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.46, 6), redGlowMat(1.5));
     core.add(plate);
     const haloMat = new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: 0.55 });
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.03, 10, 60), haloMat);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.025, 10, 60), haloMat);
     halo.rotation.x = Math.PI / 2;
     core.add(halo);
-    core.position.y = -0.4;
+    core.position.set(0, 3.0, -4.2);
     core.scale.setScalar(0.001);
     scene.add(core);
 
-    /* --- beams from each station to the core (appear at the end) --- */
+    /* --- beams: each desk plugs into the core --- */
     const beams: { tube: THREE.Mesh; curve: THREE.QuadraticBezierCurve3; pulse: THREE.Mesh }[] = [];
-    clusters.forEach((c) => {
-      const from = c.orderPos.clone().add(new THREE.Vector3(0, 0.5, 0));
-      const to = new THREE.Vector3(0, 0.35, 0);
-      const mid = from.clone().lerp(to, 0.5).add(new THREE.Vector3(0, 1.4, 0));
+    deskMonitors.forEach((from) => {
+      const to = core.position.clone();
+      const mid = from.clone().lerp(to, 0.5).add(new THREE.Vector3(0, 1.1, 0));
       const curve = new THREE.QuadraticBezierCurve3(from, mid, to);
       const tube = new THREE.Mesh(
-        new THREE.TubeGeometry(curve, 24, 0.018, 6),
+        new THREE.TubeGeometry(curve, 24, 0.016, 6),
         new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: 0 })
       );
       const pulse = new THREE.Mesh(
-        new THREE.SphereGeometry(0.06, 10, 8),
+        new THREE.SphereGeometry(0.05, 10, 8),
         new THREE.MeshBasicMaterial({ color: 0xffd8d4, transparent: true, opacity: 0 })
       );
       scene.add(tube, pulse);
       beams.push({ tube, curve, pulse });
     });
 
-    /* --- camera path --- */
+    /* --- camera: sweep across the desks, then pull back --- */
     const path = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(12.0, 2.8, 13.8),
-      new THREE.Vector3(8.2, 2.5, 11.0),
-      new THREE.Vector3(2.8, 2.2, 10.4),
-      new THREE.Vector3(-3.6, 2.6, 10.6),
-      new THREE.Vector3(-7.4, 3.4, 11.0),
-      new THREE.Vector3(-3.2, 5.8, 13.4),
-      new THREE.Vector3(0, 6.2, 13.8),
+      new THREE.Vector3(-9.2, 2.1, 8.6),
+      new THREE.Vector3(-5.8, 1.9, 5.8),
+      new THREE.Vector3(-0.6, 1.9, 5.4),
+      new THREE.Vector3(4.4, 2.0, 5.8),
+      new THREE.Vector3(7.4, 2.6, 7.6),
+      new THREE.Vector3(0, 4.8, 12.4),
     ]);
-    const lookChaos = new THREE.Vector3(0.5, 1.15, 2.6);
-    const lookCore = new THREE.Vector3(0, 0.4, 0);
+    const targetPath = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-4.6, 1.3, 0.4),
+      new THREE.Vector3(-2.4, 1.4, 0.1),
+      new THREE.Vector3(0, 1.4, -0.4),
+      new THREE.Vector3(2.6, 1.4, 0.1),
+      new THREE.Vector3(4.6, 1.5, 0.4),
+      new THREE.Vector3(0, 2.2, -2.6),
+    ]);
     const look = new THREE.Vector3();
+
+    /* --- pill reveal windows + vertical lanes (readable, no overlap) --- */
+    const WINDOWS: [number, number][] = [
+      [0.02, 0.26], // contracts — desk 1
+      [0.06, 0.3], // quotations — desk 1
+      [0.2, 0.42], // manual ops — desk 2
+      [0.26, 0.48], // scaling — desk 2
+      [0.46, 0.68], // visibility — desk 3
+      [0.5, 0.7], // profitability — desk 3
+      [0.54, 0.72], // capacity — desk 3
+      [0.1, 0.34], // response — desk 1
+      [0.38, 0.58], // tech cost — behind desk 2
+      [0.32, 0.52], // ecosystem — between desks
+    ];
+    const LANES = [0.4, 1.7, 0.55, 1.3, 0.75, 0.5, 0.6, 0.45, 1.5, 1.35];
+    const ANCHORS: THREE.Vector3[] = [
+      new THREE.Vector3(-6.1, 1.35, 0.9),
+      new THREE.Vector3(-4.3, 1.95, 0.85),
+      new THREE.Vector3(-1.9, 1.6, 0.4),
+      new THREE.Vector3(1.9, 0.75, 1.1),
+      new THREE.Vector3(7.0, 2.15, -0.3),
+      new THREE.Vector3(5.7, 1.5, 0.75),
+      new THREE.Vector3(3.0, 0.8, 2.0),
+      new THREE.Vector3(-3.7, 1.55, 0.7),
+      new THREE.Vector3(0.3, 1.2, -3.4),
+      new THREE.Vector3(-2.9, 1.6, -0.5),
+    ];
 
     /* --- scroll progress --- */
     let progress = 0;
@@ -683,13 +821,8 @@ export default function GsaStory3D({
       },
     });
 
-    /* --- labels / chips DOM sync --- */
     const labels = labelRefs.current;
     const chips = chipRefs.current;
-    const smooth = (a: number, b: number, x: number) => {
-      const k = Math.min(1, Math.max(0, (x - a) / (b - a)));
-      return k * k * (3 - 2 * k);
-    };
     const anchor = new THREE.Vector3();
 
     /* --- frame loop --- */
@@ -700,66 +833,66 @@ export default function GsaStory3D({
       if (!active) return;
       const t = clock.getElapsedTime();
 
-      // camera along path
+      // camera sweep
       const camT = smooth(0, 1, progress);
       camera.position.copy(path.getPoint(camT));
-      look.lerpVectors(lookChaos, lookCore, smooth(0.3, 0.72, progress));
+      look.copy(targetPath.getPoint(camT));
       camera.lookAt(look);
 
-      // convergence with per-cluster stagger
-      const orderStart = 0.4;
-      const stepP = 0.28 / clusters.length;
-      clusters.forEach((c, i) => {
-        const p = smooth(orderStart + i * stepP, orderStart + i * stepP + 0.18, progress);
-        c.p = p;
-        c.group.position.lerpVectors(c.chaosPos, c.orderPos, p);
-        c.group.rotation.set(
-          c.chaosRot.x * (1 - p),
-          c.chaosRot.y * (1 - p) + Math.PI * p,
-          c.chaosRot.z * (1 - p)
-        );
-        c.tick(t, p);
+      // props resolve in place, staggered
+      const propPs: number[] = [];
+      props.forEach((p, i) => {
+        const pi = smooth(0.55 + i * 0.02, 0.71 + i * 0.02, progress);
+        propPs.push(pi);
+        p.tick(t, pi);
       });
-      const avgP = clusters.reduce((s, c) => s + c.p, 0) / clusters.length;
+      const avgP = propPs.reduce((s, x) => s + x, 0) / propPs.length;
+
+      // people unwind
+      const relax = smooth(0.6, 0.85, progress);
+      people.forEach((person) => person.setPose(t, relax));
 
       // core awakens
-      const coreP = smooth(0.55, 0.8, progress);
+      const coreP = smooth(0.62, 0.82, progress);
       core.scale.setScalar(Math.max(0.001, coreP));
       core.rotation.y = t * 0.25;
       halo.scale.setScalar(1 + Math.sin(t * 1.4) * 0.04);
       haloMat.opacity = 0.55 * coreP;
-      coreLight.intensity = 26 * coreP;
-      redLight.intensity = 20 * (1 - avgP * 0.75) * (0.82 + Math.sin(t * 7) * 0.18 * (1 - avgP));
+      coreLight.intensity = 24 * coreP;
+      redLight.intensity = 16 * (1 - avgP * 0.7) * (0.82 + Math.sin(t * 7) * 0.18 * (1 - avgP));
 
-      // beams + traveling pulses
-      const beamP = smooth(0.78, 0.95, progress);
+      // beams + pulses
+      const beamP = smooth(0.78, 0.94, progress);
       beams.forEach((b, i) => {
         (b.tube.material as THREE.MeshBasicMaterial).opacity = 0.5 * beamP;
         const pm = b.pulse.material as THREE.MeshBasicMaterial;
         pm.opacity = beamP;
-        if (beamP > 0.01) b.pulse.position.copy(b.curve.getPoint((t * 0.35 + i / 6) % 1));
+        if (beamP > 0.01) b.pulse.position.copy(b.curve.getPoint((t * 0.35 + i / 3) % 1));
       });
 
-      // DOM labels track their stations
-      clusters.forEach((c, i) => {
+      // pills: sequential reveal per desk, all solutions in the finale
+      const finale = progress > 0.8;
+      props.forEach((_, i) => {
         const el = labels[i];
         if (!el) return;
-        anchor.copy(c.group.position).add(new THREE.Vector3(0, 1.75 + (i % 3) * 0.42, 0));
+        anchor.copy(ANCHORS[i]);
+        anchor.y += LANES[i] * 0.55;
         anchor.project(camera);
         const behind = anchor.z > 1;
-        const x = (anchor.x * 0.5 + 0.5) * canvas.clientWidth;
-        const y = (-anchor.y * 0.5 + 0.5) * canvas.clientHeight;
-        el.style.transform = `translate(-50%, -100%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
         const w = canvas.clientWidth;
         const h = canvas.clientHeight;
-        const clipped = behind || y < 310 || y > h - 170 || x < 70 || x > w - 70;
-        el.style.opacity = clipped ? "0" : "1";
-        el.dataset.fixed = c.p > 0.6 ? "1" : "0";
+        const x = (anchor.x * 0.5 + 0.5) * w;
+        const y = (-anchor.y * 0.5 + 0.5) * h;
+        el.style.transform = `translate(-50%, -100%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+        const inWindow = progress >= WINDOWS[i][0] && progress <= WINDOWS[i][1];
+        const clipped = behind || y < 300 || y > h - 170 || x < 90 || x > w - 90;
+        el.style.opacity = !clipped && (inWindow || finale) ? "1" : "0";
+        el.dataset.fixed = propPs[i] > 0.6 ? "1" : "0";
         const chip = chips[i];
-        if (chip) chip.dataset.fixed = c.p > 0.6 ? "1" : "0";
+        if (chip) chip.dataset.fixed = propPs[i] > 0.6 ? "1" : "0";
       });
 
-      // headline swap + progress rail
+      // headline + progress rail
       const after = progress > 0.62;
       if (beforeHeadRef.current) beforeHeadRef.current.style.opacity = after ? "0" : "1";
       if (afterHeadRef.current) afterHeadRef.current.style.opacity = after ? "1" : "0";
@@ -796,6 +929,7 @@ export default function GsaStory3D({
         }
       });
       composer.dispose();
+      pmrem.dispose();
       renderer.dispose();
     };
   }, []);
@@ -805,7 +939,7 @@ export default function GsaStory3D({
       <div className="sticky top-0 h-screen overflow-hidden">
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
-        {/* station labels */}
+        {/* problem / solution pills */}
         <div className="pointer-events-none absolute inset-0">
           {faults.map((f, i) => (
             <div
@@ -814,15 +948,15 @@ export default function GsaStory3D({
                 labelRefs.current[i] = el;
               }}
               data-fixed="0"
-              className="group absolute left-0 top-0 opacity-0 transition-opacity duration-300 will-change-transform"
+              className="group absolute left-0 top-0 opacity-0 transition-opacity duration-500 will-change-transform"
             >
-              <div className="flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[0.62rem] uppercase tracking-widest backdrop-blur-sm transition-colors duration-500 group-data-[fixed=0]:border-signal-red/50 group-data-[fixed=0]:bg-signal-red/10 group-data-[fixed=0]:text-white/85 group-data-[fixed=1]:border-white/25 group-data-[fixed=1]:bg-white/[0.06] group-data-[fixed=1]:text-white/85">
+              <div className="flex items-center gap-2.5 rounded-full border px-4 py-2 font-mono text-[0.68rem] uppercase tracking-widest shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)] backdrop-blur-md transition-colors duration-500 group-data-[fixed=0]:border-signal-red/60 group-data-[fixed=0]:bg-ink-950/85 group-data-[fixed=0]:text-white group-data-[fixed=1]:border-white/30 group-data-[fixed=1]:bg-ink-950/85 group-data-[fixed=1]:text-white">
                 <span className="text-signal-crimson group-data-[fixed=1]:hidden">✕</span>
                 <span className="hidden text-signal-crimson group-data-[fixed=1]:inline">✓</span>
                 <span className="group-data-[fixed=1]:hidden">{f}</span>
                 <span className="hidden group-data-[fixed=1]:inline">{cures[i]}</span>
               </div>
-              <div className="mx-auto h-5 w-px bg-white/25" />
+              <div className="mx-auto h-6 w-px bg-white/30" />
             </div>
           ))}
         </div>
@@ -837,7 +971,7 @@ export default function GsaStory3D({
             >
               <div className="eyebrow mb-3 justify-center">// Scene 01 — Before Kargo360</div>
               <h3 className="heading-glow text-3xl sm:text-4xl md:text-5xl">
-                <span className="heading-shine">The Way It Breaks.</span>
+                <span className="heading-shine">A Team Under Pressure.</span>
               </h3>
               <p className="mx-auto mt-3 max-w-xl px-6 text-sm leading-relaxed text-mist md:text-base">
                 {beforeCaption}
@@ -850,7 +984,7 @@ export default function GsaStory3D({
             >
               <div className="eyebrow mb-3 justify-center">// Scene 02 — After Kargo360</div>
               <h3 className="text-signal-glow text-3xl sm:text-4xl md:text-5xl">
-                <span className="text-signal">One Platform. In Orbit.</span>
+                <span className="text-signal">The Same Team, At Ease.</span>
               </h3>
               <p className="mx-auto mt-3 max-w-xl px-6 text-sm leading-relaxed text-mist md:text-base">
                 {afterCaption}
@@ -877,7 +1011,6 @@ export default function GsaStory3D({
               </span>
             ))}
           </div>
-          {/* scroll progress */}
           <div className="relative h-px w-64 bg-white/15">
             <div ref={progressRef} className="absolute inset-y-0 left-0 bg-signal-red" style={{ width: "0%" }} />
           </div>
