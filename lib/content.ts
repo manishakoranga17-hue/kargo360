@@ -144,6 +144,8 @@ export type Solution = {
     heading: string;
     intro: string;
   };
+  /** real-world challenge pairs powering the 3D scroll story (problem → solution) */
+  story?: { problem: string; solution: string }[];
   /** hero video — set `src` (and optionally `poster`) when the film is ready */
   video?: {
     title: string;
@@ -279,6 +281,18 @@ export const solutions: Solution[] = [
       intro:
         "Quotes, bookings, capacity and settlement — the whole GSA operation runs live in the 360 cockpit, visible to you and your airlines at every moment.",
     },
+    story: [
+      { problem: "Managing Multiple Airline Contracts", solution: "All Contracts, One Platform" },
+      { problem: "Handling Multiple Customer Quotations", solution: "Instant Digital Quotations" },
+      { problem: "Revenue Limited by Manual Operations", solution: "Automated Revenue Engine" },
+      { problem: "Difficulty Scaling Operations", solution: "Scale Without Limits" },
+      { problem: "Limited Visibility Into Performance", solution: "Live Performance Visibility" },
+      { problem: "Uncertainty in Profitability", solution: "Profitability in Real Time" },
+      { problem: "Underutilized Flight Capacity", solution: "Capacity Fully Utilized" },
+      { problem: "Slow Customer Response", solution: "Instant Customer Response" },
+      { problem: "High Technology Investment", solution: "Zero Tech Investment" },
+      { problem: "Disconnected Cargo Ecosystem", solution: "One Connected Ecosystem" },
+    ],
     video: {
       title: "Watch: The GSA Business, Reimagined",
       duration: "2:30",

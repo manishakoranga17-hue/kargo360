@@ -59,42 +59,357 @@ type Cluster = {
   p: number;
 };
 
-/* ---------- the six problem stations ---------- */
+/* ---------- the ten challenge stations ---------- */
 
+// 1 · Managing multiple airline contracts — fanned contract docs with seals
+function makeContracts(): Cluster {
+  const g = new THREE.Group();
+  const docs: THREE.Mesh[] = [];
+  const chaos: { pos: THREE.Vector3; rot: THREE.Euler }[] = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.02, 0.56), shellMat(i === 2 ? 0x3a2026 : 0x262933));
+    addEdges(d, 0.25);
+    chaos.push({
+      pos: new THREE.Vector3(Math.sin(i * 2.2) * 0.6, 0.3 + (i % 3) * 0.34, Math.cos(i * 1.5) * 0.45),
+      rot: new THREE.Euler(Math.sin(i * 3) * 0.45, i * 0.9, Math.cos(i * 2) * 0.4),
+    });
+    g.add(d);
+    docs.push(d);
+  }
+  const seals: THREE.Mesh[] = [];
+  for (let i = 0; i < 2; i++) {
+    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.025, 12), redGlowMat(1.1));
+    g.add(seal);
+    seals.push(seal);
+  }
+  return {
+    group: g,
+    chaosPos: new THREE.Vector3(7.4, 1.4, 3.4),
+    orderPos: new THREE.Vector3(0, 0, 0),
+    chaosRot: new THREE.Euler(0, 0.5, 0),
+    errorBits: [],
+    fixedBits: [],
+    p: 0,
+    tick: (t, p) => {
+      docs.forEach((d, i) => {
+        const c = chaos[i];
+        const stackY = 0.1 + i * 0.04;
+        d.position.set(
+          c.pos.x * (1 - p) + Math.sin(t * 0.9 + i) * 0.06 * (1 - p),
+          c.pos.y * (1 - p) + stackY * p,
+          c.pos.z * (1 - p)
+        );
+        d.rotation.set(c.rot.x * (1 - p), c.rot.y * (1 - p), c.rot.z * (1 - p));
+      });
+      seals.forEach((seal, i) => {
+        const d = docs[i * 2 + 1];
+        seal.position.set(d.position.x + 0.12, d.position.y + 0.03, d.position.z + 0.14);
+        seal.rotation.copy(d.rotation);
+      });
+    },
+  };
+}
+
+// 2 · Handling multiple customer quotations — quote slips swirling in the air
+function makeQuotes(): Cluster {
+  const g = new THREE.Group();
+  const slips: THREE.Group[] = [];
+  for (let i = 0; i < 5; i++) {
+    const slip = new THREE.Group();
+    const env = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.03, 0.3), shellMat(0x262933));
+    addEdges(env, 0.3);
+    slip.add(env);
+    const flap = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.015, 0.18), shellMat(i === 0 ? 0x3a2026 : 0x1d2029));
+    flap.position.set(0, 0.025, -0.04);
+    flap.rotation.x = 0.5;
+    slip.add(flap);
+    g.add(slip);
+    slips.push(slip);
+  }
+  return {
+    group: g,
+    chaosPos: new THREE.Vector3(6.2, 0.7, 5.6),
+    orderPos: new THREE.Vector3(0, 0, 0),
+    chaosRot: new THREE.Euler(0.1, -0.4, 0),
+    errorBits: [],
+    fixedBits: [],
+    p: 0,
+    tick: (t, p) => {
+      slips.forEach((slip, i) => {
+        const a = t * 0.7 + (i * Math.PI * 2) / 5;
+        // swirl in a loose cyclone → settle into a tidy tray stack
+        slip.position.set(
+          Math.cos(a) * 0.75 * (1 - p),
+          (0.4 + i * 0.22 + Math.sin(a * 1.3) * 0.15) * (1 - p) + (0.1 + i * 0.05) * p,
+          Math.sin(a) * 0.55 * (1 - p)
+        );
+        slip.rotation.set(
+          Math.sin(a) * 0.4 * (1 - p),
+          a * (1 - p),
+          Math.cos(a * 0.8) * 0.3 * (1 - p)
+        );
+      });
+    },
+  };
+}
+
+// 3 · Revenue limited by manual operations — grinding gears, jerky and sparking
+function makeGears(): Cluster {
+  const g = new THREE.Group();
+  const mk = (r: number, x: number, y: number) => {
+    const gear = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.13, 9), shellMat(0x1b1e27));
+    addEdges(gear, 0.45);
+    gear.rotation.x = Math.PI / 2;
+    gear.position.set(x, y, 0);
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.3, r * 0.3, 0.16, 9), shellMat(0x2a2d38));
+    hub.rotation.x = Math.PI / 2;
+    hub.position.copy(gear.position);
+    g.add(gear, hub);
+    return gear;
+  };
+  const g1 = mk(0.48, -0.35, 0.55);
+  const g2 = mk(0.34, 0.42, 0.82);
+  const g3 = mk(0.27, 0.5, 0.22);
+  const sparks: THREE.Line[] = [];
+  for (let i = 0; i < 2; i++) {
+    const geo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0.02 + i * 0.05, 0.62, 0.1),
+      new THREE.Vector3(0.16 + i * 0.06, 0.75 + i * 0.08, 0.12),
+    ]);
+    const l = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: RED, transparent: true, opacity: 0.9 }));
+    g.add(l);
+    sparks.push(l);
+  }
+  return {
+    group: g,
+    chaosPos: new THREE.Vector3(4.4, 1.3, 3.0),
+    orderPos: new THREE.Vector3(0, 0, 0),
+    chaosRot: new THREE.Euler(0.15, 0.6, -0.05),
+    errorBits: sparks,
+    fixedBits: [],
+    p: 0,
+    tick: (t, p) => {
+      // jerky stalls before, smooth spin after
+      const jerky = Math.floor(t * 1.6) / 1.6;
+      const rot = jerky * (1 - p) + t * 1.1 * p;
+      g1.rotation.y = rot;
+      g2.rotation.y = -rot * 1.4;
+      g3.rotation.y = rot * 1.75;
+      sparks.forEach((l, i) => {
+        (l.material as THREE.LineBasicMaterial).opacity =
+          (Math.sin(t * 9 + i * 2) > 0.55 ? 0.9 : 0) * (1 - p);
+      });
+    },
+  };
+}
+
+// 4 · Difficulty scaling operations — a toppled stack that rebuilds into a pyramid
+function makeScaling(): Cluster {
+  const g = new THREE.Group();
+  const cubes: THREE.Mesh[] = [];
+  const chaos: { pos: THREE.Vector3; rot: THREE.Euler }[] = [
+    { pos: new THREE.Vector3(0, 0.17, 0), rot: new THREE.Euler(0, 0.3, 0) },
+    { pos: new THREE.Vector3(0.55, 0.17, 0.35), rot: new THREE.Euler(0, 0.8, 0.4) },
+    { pos: new THREE.Vector3(-0.6, 0.17, 0.25), rot: new THREE.Euler(0.5, 0.2, 0) },
+    { pos: new THREE.Vector3(0.18, 0.5, 0.02), rot: new THREE.Euler(0, 0.6, 0.25) },
+    { pos: new THREE.Vector3(0.95, 0.17, -0.25), rot: new THREE.Euler(0.4, 0, 0.9) },
+    { pos: new THREE.Vector3(-0.3, 0.17, -0.55), rot: new THREE.Euler(0, 1.1, 0.5) },
+  ];
+  const order = [
+    new THREE.Vector3(-0.4, 0.17, 0),
+    new THREE.Vector3(0, 0.17, 0),
+    new THREE.Vector3(0.4, 0.17, 0),
+    new THREE.Vector3(-0.2, 0.51, 0),
+    new THREE.Vector3(0.2, 0.51, 0),
+    new THREE.Vector3(0, 0.85, 0),
+  ];
+  for (let i = 0; i < 6; i++) {
+    const c = box(0.34, 0.34, 0.34, shellMat(i === 5 ? 0x3a2026 : 0x22252f));
+    g.add(c);
+    cubes.push(c);
+  }
+  return {
+    group: g,
+    chaosPos: new THREE.Vector3(3.2, 0.3, 5.6),
+    orderPos: new THREE.Vector3(0, 0, 0),
+    chaosRot: new THREE.Euler(0, -0.5, 0),
+    errorBits: [],
+    fixedBits: [],
+    p: 0,
+    tick: (_t, p) => {
+      cubes.forEach((c, i) => {
+        c.position.lerpVectors(chaos[i].pos, order[i], p);
+        c.rotation.set(chaos[i].rot.x * (1 - p), chaos[i].rot.y * (1 - p), chaos[i].rot.z * (1 - p));
+      });
+    },
+  };
+}
+
+// 5 · Limited visibility into performance — a dead dashboard flatlining
+function makeVisibility(): Cluster {
+  const g = new THREE.Group();
+  const panel = box(1.2, 0.82, 0.09, shellMat(0x121319));
+  panel.position.y = 0.95;
+  g.add(panel);
+  const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.55, 8), shellMat(0x2a2d38));
+  stand.position.y = 0.28;
+  g.add(stand);
+  const flat = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.028, 0.02), redGlowMat(1.5));
+  flat.position.set(0, 0.95, 0.06);
+  g.add(flat);
+  const bars: THREE.Mesh[] = [];
+  const hs = [0.16, 0.28, 0.22, 0.38, 0.5];
+  hs.forEach((h, i) => {
+    const b = new THREE.Mesh(
+      new THREE.BoxGeometry(0.13, h, 0.03),
+      i === 3 ? redGlowMat(1.2) : shellMat(0x3a3f4d)
+    );
+    b.position.set(-0.4 + i * 0.2, 0, 0.06);
+    g.add(b);
+    bars.push(b);
+  });
+  return {
+    group: g,
+    chaosPos: new THREE.Vector3(1.4, 1.7, 3.4),
+    orderPos: new THREE.Vector3(0, 0, 0),
+    chaosRot: new THREE.Euler(-0.12, 0.4, 0.1),
+    errorBits: [flat],
+    fixedBits: bars,
+    p: 0,
+    tick: (t, p) => {
+      (flat.material as THREE.MeshStandardMaterial).emissiveIntensity =
+        (1.1 + Math.sin(t * 2.4) * 0.5) * (1 - p);
+      flat.scale.setScalar(Math.max(0.001, 1 - p));
+      bars.forEach((b, i) => {
+        const grow = Math.max(0.001, p * (0.75 + Math.sin(t * 1.4 + i) * 0.25));
+        b.scale.y = grow;
+        const h = (b.geometry as THREE.BoxGeometry).parameters.height;
+        b.position.y = 0.62 + (h * grow) / 2;
+      });
+    },
+  };
+}
+
+// 6 · Uncertainty in profitability — a balance that can't stop tipping
+function makeBalance(): Cluster {
+  const g = new THREE.Group();
+  const wedge = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.3, 0.42, 4), shellMat(0x22252f));
+  wedge.position.y = 0.21;
+  addEdges(wedge, 0.4);
+  g.add(wedge);
+  const plankG = new THREE.Group();
+  plankG.position.y = 0.44;
+  const plank = box(1.5, 0.05, 0.3, shellMat(0x2a2d38));
+  plankG.add(plank);
+  const w1 = box(0.24, 0.24, 0.24, shellMat(0x22252f));
+  w1.position.set(-0.6, 0.15, 0);
+  const w2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), redGlowMat(0.9));
+  w2.position.set(0.62, 0.13, 0);
+  plankG.add(w1, w2);
+  g.add(plankG);
+  return {
+    group: g,
+    chaosPos: new THREE.Vector3(-0.4, 0.4, 5.8),
+    orderPos: new THREE.Vector3(0, 0, 0),
+    chaosRot: new THREE.Euler(0, 0.7, 0),
+    errorBits: [],
+    fixedBits: [],
+    p: 0,
+    tick: (t, p) => {
+      plankG.rotation.z = Math.sin(t * 1.7) * 0.24 * (1 - p);
+    },
+  };
+}
+
+// 7 · Underutilized flight capacity — a half-empty ghost ULD that fills solid
+function makeCapacity(): Cluster {
+  const g = new THREE.Group();
+  const shape = new THREE.Shape();
+  shape.moveTo(-0.55, 0);
+  shape.lineTo(0.55, 0);
+  shape.lineTo(0.55, 0.8);
+  shape.lineTo(-0.25, 0.8);
+  shape.lineTo(-0.55, 0.5);
+  shape.closePath();
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.62, bevelEnabled: false });
+  const fillMat = new THREE.MeshStandardMaterial({
+    color: SHELL,
+    metalness: 0.5,
+    roughness: 0.45,
+    transparent: true,
+    opacity: 0.14,
+  });
+  const uld = new THREE.Mesh(geo, fillMat);
+  uld.position.z = -0.31;
+  const lines = new THREE.LineSegments(
+    new THREE.EdgesGeometry(geo),
+    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 })
+  );
+  uld.add(lines);
+  g.add(uld);
+  // load meter
+  const meterBg = box(0.09, 0.8, 0.06, shellMat(0x191b22));
+  meterBg.position.set(0.78, 0.4, 0);
+  g.add(meterBg);
+  const meterFill = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.8, 0.05), redGlowMat(1.2));
+  g.add(meterFill);
+  return {
+    group: g,
+    chaosPos: new THREE.Vector3(-2.4, 0.9, 3.2),
+    orderPos: new THREE.Vector3(0, 0, 0),
+    chaosRot: new THREE.Euler(0.1, 0.8, 0),
+    errorBits: [],
+    fixedBits: [],
+    p: 0,
+    tick: (t, p) => {
+      fillMat.opacity = 0.14 + 0.72 * p;
+      const load = 0.42 + 0.58 * p;
+      meterFill.scale.y = load;
+      meterFill.position.set(0.78, 0.4 * load, 0);
+    },
+  };
+}
+
+// 8 · Slow customer response — the phone ringing off the hook
 function makePhone(): Cluster {
   const g = new THREE.Group();
-  const body = box(1.25, 0.4, 0.75);
-  body.position.y = 0.2;
+  const body = box(1.1, 0.36, 0.65);
+  body.position.y = 0.18;
   g.add(body);
-  const handset = new THREE.Mesh(
-    new THREE.TorusGeometry(0.52, 0.09, 10, 24, Math.PI),
-    shellMat(0x1b1d26)
-  );
-  handset.position.set(0, 0.48, 0);
+  const handset = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.08, 10, 24, Math.PI), shellMat(0x1b1d26));
+  handset.position.set(0, 0.44, 0);
   g.add(handset);
-  const earL = box(0.26, 0.18, 0.3, shellMat(0x1b1d26));
-  earL.position.set(-0.52, 0.5, 0);
-  const earR = box(0.26, 0.18, 0.3, shellMat(0x1b1d26));
-  earR.position.set(0.52, 0.5, 0);
+  const earL = box(0.22, 0.16, 0.26, shellMat(0x1b1d26));
+  earL.position.set(-0.46, 0.46, 0);
+  const earR = box(0.22, 0.16, 0.26, shellMat(0x1b1d26));
+  earR.position.set(0.46, 0.46, 0);
   g.add(earL, earR);
   const rings: THREE.Mesh[] = [];
   for (let i = 0; i < 3; i++) {
     const r = new THREE.Mesh(
-      new THREE.TorusGeometry(0.36 + i * 0.22, 0.02, 8, 40),
-      new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: 0.8 })
+      new THREE.TorusGeometry(0.34 + i * 0.2, 0.018, 8, 40),
+      new THREE.MeshBasicMaterial({ color: RED, transparent: true, opacity: 0.6 })
     );
     r.rotation.x = Math.PI / 2;
-    r.position.y = 0.85 + i * 0.28;
+    r.position.y = 0.78 + i * 0.24;
     g.add(r);
     rings.push(r);
   }
+  // instant-response panel, revealed when fixed
+  const chat = box(0.6, 0.42, 0.06, shellMat(0x191b22));
+  chat.position.y = 0.95;
+  chat.scale.setScalar(0.001);
+  const tick = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 30), redGlowMat(1.4));
+  tick.position.z = 0.05;
+  chat.add(tick);
+  g.add(chat);
   return {
     group: g,
-    chaosPos: new THREE.Vector3(6.8, 0.7, 3.6),
+    chaosPos: new THREE.Vector3(-4.4, 0.7, 5.6),
     orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0.24, -0.7, -0.14),
+    chaosRot: new THREE.Euler(0.2, -0.6, -0.1),
     errorBits: rings,
-    fixedBits: [],
+    fixedBits: [chat],
     p: 0,
     tick: (t, p) => {
       rings.forEach((r, i) => {
@@ -102,48 +417,55 @@ function makePhone(): Cluster {
         r.scale.setScalar(0.7 + ph * 0.7);
         (r.material as THREE.MeshBasicMaterial).opacity = (1 - ph) * 0.6 * (1 - p);
       });
-      handset.position.y = 0.48 + Math.sin(t * 14) * 0.02 * (1 - p);
+      handset.position.y = 0.44 + Math.sin(t * 14) * 0.02 * (1 - p);
+      chat.scale.setScalar(Math.max(0.001, p));
     },
   };
 }
 
-function makeClock(): Cluster {
+// 9 · High technology investment — a server rack burning through coins
+function makeTechCost(): Cluster {
   const g = new THREE.Group();
-  const face = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.16, 32), shellMat());
-  face.rotation.x = Math.PI / 2;
-  face.position.y = 0.9;
-  addEdges(face, 0.3);
-  g.add(face);
-  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.52, 0.05), redGlowMat(1.8));
-  hand.position.set(0, 1.1, 0.11);
-  g.add(hand);
-  const hand2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.36, 0.04), shellMat(0x3a3d48));
-  hand2.position.set(0.1, 1.0, 0.12);
-  hand2.rotation.z = -1.1;
-  g.add(hand2);
-  const cal = box(0.72, 0.85, 0.16);
-  cal.position.set(1.05, 0.42, 0);
-  g.add(cal);
-  const band = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.16, 0.17), redGlowMat(0.9));
-  band.position.set(1.05, 0.77, 0);
-  g.add(band);
+  const rack = box(0.7, 1.35, 0.6, shellMat(0x191b22));
+  rack.position.y = 0.68;
+  g.add(rack);
+  const leds: THREE.Mesh[] = [];
+  for (let i = 0; i < 3; i++) {
+    const led = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.02), redGlowMat(1.4));
+    led.position.set(0, 0.35 + i * 0.35, 0.32);
+    g.add(led);
+    leds.push(led);
+  }
+  const coins: THREE.Mesh[] = [];
+  for (let i = 0; i < 4; i++) {
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.05, 16), shellMat(0x3a3d48));
+    addEdges(coin, 0.3);
+    coin.position.set(0.62, 0.03 + i * 0.055, 0.15);
+    if (i === 3) coin.rotation.z = 0.4;
+    g.add(coin);
+    coins.push(coin);
+  }
   return {
     group: g,
-    chaosPos: new THREE.Vector3(3.4, 1.6, 5.6),
+    chaosPos: new THREE.Vector3(-6.0, 0.3, 3.2),
     orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(-0.18, 0.55, 0.2),
-    errorBits: [band],
+    chaosRot: new THREE.Euler(0, 0.9, 0),
+    errorBits: [...leds, ...coins],
     fixedBits: [],
     p: 0,
     tick: (t, p) => {
-      // hand spins wildly before, sweeps calmly after
-      hand.rotation.z = -t * (6 - 5.7 * p);
-      hand.position.x = Math.sin(hand.rotation.z) * -0.26;
-      hand.position.y = 0.9 + Math.cos(hand.rotation.z) * 0.26;
+      leds.forEach((led, i) => {
+        (led.material as THREE.MeshStandardMaterial).emissiveIntensity =
+          (0.5 + Math.abs(Math.sin(t * 6 + i * 1.3))) * (1 - p) + 0.5 * p;
+      });
+      coins.forEach((coin, i) => {
+        coin.scale.setScalar(Math.max(0.001, 1 - p));
+      });
     },
   };
 }
 
+// 10 · Disconnected cargo ecosystem — silos with broken links, then one network
 function makeSilos(): Cluster {
   const g = new THREE.Group();
   const a = box(0.85, 1.05, 0.5);
@@ -153,7 +475,6 @@ function makeSilos(): Cluster {
   b.position.set(0.15, 0.65, -0.4);
   c.position.set(1.25, 0.42, 0.3);
   g.add(a, b, c);
-  // broken red links between the silos
   const linkMat = new THREE.LineBasicMaterial({ color: RED, transparent: true, opacity: 0.9 });
   const links: THREE.Line[] = [];
   const mk = (pts: number[][]) => {
@@ -174,7 +495,6 @@ function makeSilos(): Cluster {
     [0.62, 0.7, -0.2],
     [0.85, 0.6, 0.05],
   ]);
-  // clean white links once unified
   const cleanMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
   const clean: THREE.Line[] = [];
   const mkClean = (from: number[], to: number[]) => {
@@ -190,7 +510,7 @@ function makeSilos(): Cluster {
   mkClean([0.15, 0.75, -0.4], [1.25, 0.5, 0.3]);
   return {
     group: g,
-    chaosPos: new THREE.Vector3(-0.5, 0.4, 5.4),
+    chaosPos: new THREE.Vector3(-7.4, 0.6, 5.6),
     orderPos: new THREE.Vector3(0, 0, 0),
     chaosRot: new THREE.Euler(0.1, 0.35, -0.08),
     errorBits: links,
@@ -204,127 +524,6 @@ function makeSilos(): Cluster {
       clean.forEach((l) => {
         (l.material as THREE.LineBasicMaterial).opacity = 0.55 * p;
       });
-    },
-  };
-}
-
-function makePapers(): Cluster {
-  const g = new THREE.Group();
-  const sheets: THREE.Mesh[] = [];
-  const chaos: { pos: THREE.Vector3; rot: THREE.Euler }[] = [];
-  for (let i = 0; i < 8; i++) {
-    const s = new THREE.Mesh(
-      new THREE.BoxGeometry(0.4, 0.02, 0.52),
-      shellMat(i === 3 ? 0x3a2026 : 0x262933)
-    );
-    addEdges(s, 0.25);
-    chaos.push({
-      pos: new THREE.Vector3(
-        Math.sin(i * 2.4) * 0.65,
-        0.3 + (i % 4) * 0.32,
-        Math.cos(i * 1.7) * 0.5
-      ),
-      rot: new THREE.Euler(Math.sin(i * 3) * 0.5, i * 0.8, Math.cos(i * 2) * 0.45),
-    });
-    g.add(s);
-    sheets.push(s);
-  }
-  return {
-    group: g,
-    chaosPos: new THREE.Vector3(-4.2, 1.1, 4.8),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0, 0.4, 0),
-    errorBits: [],
-    fixedBits: [],
-    p: 0,
-    tick: (t, p) => {
-      sheets.forEach((s, i) => {
-        const c = chaos[i];
-        // chaotic float → tidy stack
-        const stackY = 0.12 + i * 0.045;
-        s.position.set(
-          c.pos.x * (1 - p) + Math.sin(t * 0.8 + i) * 0.08 * (1 - p),
-          c.pos.y * (1 - p) + stackY * p + Math.sin(t * 1.1 + i * 2) * 0.06 * (1 - p),
-          c.pos.z * (1 - p)
-        );
-        s.rotation.set(c.rot.x * (1 - p), c.rot.y * (1 - p), c.rot.z * (1 - p));
-      });
-    },
-  };
-}
-
-function makeLeak(): Cluster {
-  const g = new THREE.Group();
-  const vault = box(1.0, 0.95, 0.85);
-  vault.position.y = 0.85;
-  g.add(vault);
-  const drops: THREE.Mesh[] = [];
-  for (let i = 0; i < 5; i++) {
-    const d = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.13, 0.13), redGlowMat(1.4));
-    g.add(d);
-    drops.push(d);
-  }
-  const seal = new THREE.Mesh(new THREE.TorusGeometry(0.66, 0.05, 10, 40), redGlowMat(1.2));
-  seal.rotation.x = Math.PI / 2;
-  seal.position.y = 0.85;
-  seal.scale.setScalar(0.001);
-  g.add(seal);
-  return {
-    group: g,
-    chaosPos: new THREE.Vector3(-6.7, 0.25, 3.6),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(0.12, 0.9, 0.1),
-    errorBits: drops,
-    fixedBits: [seal],
-    p: 0,
-    tick: (t, p) => {
-      drops.forEach((d, i) => {
-        const ph = (t * 0.55 + i * 0.2) % 1;
-        d.position.set(Math.sin(i * 2.1) * 0.3, 0.35 - ph * 1.1, Math.cos(i * 1.3) * 0.25);
-        d.scale.setScalar(Math.max(0.001, (1 - ph) * (1 - p)));
-      });
-      seal.scale.setScalar(Math.max(0.001, p));
-      seal.rotation.z = t * 0.4;
-    },
-  };
-}
-
-function makeBubbles(): Cluster {
-  const g = new THREE.Group();
-  const bubbles: THREE.Mesh[] = [];
-  for (let i = 0; i < 3; i++) {
-    const b = new THREE.Mesh(
-      new THREE.SphereGeometry(0.26, 20, 16),
-      i === 1 ? redGlowMat(1.1) : shellMat(0x232630)
-    );
-    b.scale.set(1.45, 1, 1.1);
-    g.add(b);
-    bubbles.push(b);
-  }
-  // self-serve terminal, revealed when fixed
-  const tablet = box(0.62, 0.9, 0.09);
-  tablet.position.y = 0.55;
-  tablet.scale.setScalar(0.001);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.03, 8, 30), redGlowMat(1.4));
-  ring.position.set(0, 0.62, 0.08);
-  tablet.add(ring);
-  g.add(tablet);
-  return {
-    group: g,
-    chaosPos: new THREE.Vector3(-6.0, 1.9, -0.4),
-    orderPos: new THREE.Vector3(0, 0, 0),
-    chaosRot: new THREE.Euler(-0.1, 1.2, 0.16),
-    errorBits: bubbles,
-    fixedBits: [tablet],
-    p: 0,
-    tick: (t, p) => {
-      bubbles.forEach((b, i) => {
-        const ph = (t * 0.4 + i * 0.33) % 1;
-        b.position.set(Math.sin(i * 2.4) * 0.35, 0.2 + ph * 1.5, 0);
-        const s = Math.max(0.001, (0.6 + ph * 0.5) * (1 - p));
-        b.scale.set(1.45 * s, s, 1.1 * s);
-      });
-      tablet.scale.setScalar(Math.max(0.001, p));
     },
   };
 }
@@ -394,17 +593,21 @@ export default function GsaStory3D({
 
     /* --- clusters --- */
     const clusters: Cluster[] = [
+      makeContracts(),
+      makeQuotes(),
+      makeGears(),
+      makeScaling(),
+      makeVisibility(),
+      makeBalance(),
+      makeCapacity(),
       makePhone(),
-      makeClock(),
+      makeTechCost(),
       makeSilos(),
-      makePapers(),
-      makeLeak(),
-      makeBubbles(),
     ];
     // ordered ring positions around the core
     clusters.forEach((c, i) => {
-      const a = (-90 - i * 60) * (Math.PI / 180);
-      c.orderPos.set(Math.cos(a) * 4.6, -0.4, Math.sin(a) * 4.6 * 0.82);
+      const a = (-90 - (i * 360) / clusters.length) * (Math.PI / 180);
+      c.orderPos.set(Math.cos(a) * 5.5, -0.4, Math.sin(a) * 5.5 * 0.82);
       c.group.position.copy(c.chaosPos);
       c.group.rotation.copy(c.chaosRot);
       c.group.scale.setScalar(0.82);
@@ -452,10 +655,10 @@ export default function GsaStory3D({
       new THREE.Vector3(2.8, 2.2, 10.4),
       new THREE.Vector3(-3.6, 2.6, 10.6),
       new THREE.Vector3(-7.4, 3.4, 11.0),
-      new THREE.Vector3(-3.2, 5.4, 12.4),
-      new THREE.Vector3(0, 5.6, 12.6),
+      new THREE.Vector3(-3.2, 5.8, 13.4),
+      new THREE.Vector3(0, 6.2, 13.8),
     ]);
-    const lookChaos = new THREE.Vector3(0.8, 0.35, 3.0);
+    const lookChaos = new THREE.Vector3(0.5, 1.15, 2.6);
     const lookCore = new THREE.Vector3(0, 0.4, 0);
     const look = new THREE.Vector3();
 
@@ -505,8 +708,9 @@ export default function GsaStory3D({
 
       // convergence with per-cluster stagger
       const orderStart = 0.4;
+      const stepP = 0.28 / clusters.length;
       clusters.forEach((c, i) => {
-        const p = smooth(orderStart + i * 0.045, orderStart + i * 0.045 + 0.2, progress);
+        const p = smooth(orderStart + i * stepP, orderStart + i * stepP + 0.18, progress);
         c.p = p;
         c.group.position.lerpVectors(c.chaosPos, c.orderPos, p);
         c.group.rotation.set(
@@ -597,7 +801,7 @@ export default function GsaStory3D({
   }, []);
 
   return (
-    <div ref={wrapRef} className="relative h-[420vh] bg-ink-950">
+    <div ref={wrapRef} className="relative h-[560vh] bg-ink-950">
       <div className="sticky top-0 h-screen overflow-hidden">
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
 
@@ -665,7 +869,7 @@ export default function GsaStory3D({
                   chipRefs.current[i] = el;
                 }}
                 data-fixed="0"
-                className="group inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[0.6rem] uppercase tracking-widest transition-colors duration-500 data-[fixed=0]:border-signal-red/40 data-[fixed=0]:bg-signal-red/[0.07] data-[fixed=0]:text-mist-bright data-[fixed=1]:border-white/25 data-[fixed=1]:bg-white/[0.05] data-[fixed=1]:text-white"
+                className="group inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[0.55rem] uppercase tracking-widest transition-colors duration-500 data-[fixed=0]:border-signal-red/40 data-[fixed=0]:bg-signal-red/[0.07] data-[fixed=0]:text-mist-bright data-[fixed=1]:border-white/25 data-[fixed=1]:bg-white/[0.05] data-[fixed=1]:text-white"
               >
                 <span className="text-signal-crimson group-data-[fixed=1]:hidden">✕</span>
                 <span className="hidden text-signal-crimson group-data-[fixed=1]:inline">✓</span>

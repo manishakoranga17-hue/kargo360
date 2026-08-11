@@ -242,8 +242,12 @@ export default function SolutionTemplate({ solution }: { solution: Solution }) {
           </div>
           {use3d ? (
             <GsaStory3D
-              faults={solution.pains.items.map((p) => p.title)}
-              cures={solution.fixes.items.map((f) => f.title)}
+              faults={(solution.story ?? solution.pains.items.map((p) => ({ problem: p.title }))).map(
+                (c) => c.problem
+              )}
+              cures={
+                solution.story?.map((c) => c.solution) ?? solution.fixes.items.map((f) => f.title)
+              }
               beforeCaption={solution.pains.intro}
               afterCaption={solution.fixes.intro}
             />
