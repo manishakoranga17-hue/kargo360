@@ -60,7 +60,7 @@ const smooth = (a: number, b: number, x: number) => {
 type Person = {
   group: THREE.Group;
   /** relax: 0 stressed → 1 at ease */
-  setPose: (t: number, relax: number) => void;
+  setPose: (t: number, relax: number, faceYaw: number) => void;
 };
 
 /**
@@ -70,7 +70,24 @@ type Person = {
  */
 function makePerson(variant: number, seed: number): Person {
   const g = new THREE.Group();
-  const bodyMat = shellMat(0x232733);
+  // visible, warm figure: lit skin + colored shirt so it never sinks into the dark
+  const SKIN = 0xd9a887;
+  const skinMat = new THREE.MeshStandardMaterial({
+    color: SKIN,
+    emissive: SKIN,
+    emissiveIntensity: 0.22,
+    metalness: 0.05,
+    roughness: 0.6,
+  });
+  const shirtColor = [0x51607a, 0x6a4f5c, 0x4f6a5e][variant % 3];
+  const shirtMat = new THREE.MeshStandardMaterial({
+    color: shirtColor,
+    emissive: shirtColor,
+    emissiveIntensity: 0.16,
+    metalness: 0.1,
+    roughness: 0.6,
+  });
+  const hairMat = shellMat(0x23262e);
   const darkMat = shellMat(0x1a1d26);
 
   // chair
@@ -82,104 +99,133 @@ function makePerson(variant: number, seed: number): Person {
   stem.position.y = 0.44;
   g.add(seat, back, stem);
 
-  // legs (mostly under the desk)
-  const thigh = capsule(0.075, 0.26, bodyMat);
+  // legs
+  const thigh = capsule(0.075, 0.26, shirtMat);
   thigh.rotation.x = Math.PI / 2;
   thigh.position.set(0.09, 0.68, 0.18);
   const thigh2 = thigh.clone();
   thigh2.position.x = -0.09;
-  const shin = capsule(0.065, 0.28, bodyMat);
+  const shin = capsule(0.065, 0.28, darkMat);
   shin.position.set(0.09, 0.5, 0.32);
   const shin2 = shin.clone();
   shin2.position.x = -0.09;
   g.add(thigh, thigh2, shin, shin2);
 
-  // torso pivots at the hips
+  // torso pivots at the hips — taller so the head clears the monitor
   const torsoG = new THREE.Group();
   torsoG.position.set(0, 0.68, -0.02);
   g.add(torsoG);
-  const torso = capsule(0.17, 0.4, bodyMat);
-  torso.position.y = 0.34;
+  const torso = capsule(0.18, 0.52, shirtMat);
+  torso.position.y = 0.4;
   torsoG.add(torso);
+  // red lanyard accent
+  const lanyard = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.02), redGlowMat(0.7));
+  lanyard.position.set(0, 0.5, 0.175);
+  torsoG.add(lanyard);
 
-  // head
+  // head with a face
   const headG = new THREE.Group();
-  headG.position.set(0, 0.66, 0.02);
+  headG.position.set(0, 0.82, 0.02);
   torsoG.add(headG);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.145, 18, 14), shellMat(0x2b2f3c));
-  head.position.y = 0.1;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 20, 16), skinMat);
+  head.position.y = 0.12;
   headG.add(head);
   const hair = new THREE.Mesh(
-    new THREE.SphereGeometry(0.15, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
-    darkMat
+    new THREE.SphereGeometry(0.176, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.52),
+    hairMat
   );
-  hair.position.set(0, 0.115, -0.02);
-  hair.rotation.x = -0.35;
+  hair.position.set(0, 0.135, -0.025);
+  hair.rotation.x = -0.38;
   headG.add(hair);
   if (variant === 1) {
-    const bun = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), darkMat);
-    bun.position.set(0, 0.2, -0.13);
+    const bun = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), hairMat);
+    bun.position.set(0, 0.26, -0.14);
     headG.add(bun);
   }
+  // eyes
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x14161d });
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), eyeMat);
+  eyeL.position.set(-0.062, 0.135, 0.155);
+  const eyeR = eyeL.clone();
+  eyeR.position.x = 0.062;
+  headG.add(eyeL, eyeR);
+  // brows: angled in when strained, raised when easy
+  const browGeo = new THREE.BoxGeometry(0.055, 0.012, 0.012);
+  const browMat = new THREE.MeshBasicMaterial({ color: 0x23262e });
+  const browL = new THREE.Mesh(browGeo, browMat);
+  browL.position.set(-0.062, 0.175, 0.155);
+  const browR = new THREE.Mesh(browGeo, browMat);
+  browR.position.set(0.062, 0.175, 0.155);
+  headG.add(browL, browR);
+  // mouth: frown ∩ crossfades to smile ∪
+  const mouthMat = new THREE.MeshBasicMaterial({ color: 0x8a4a44 });
+  const frown = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.011, 8, 16, Math.PI), mouthMat);
+  frown.position.set(0, 0.045, 0.152);
+  const smile = frown.clone();
+  smile.rotation.z = Math.PI;
+  smile.position.y = 0.075;
+  headG.add(frown, smile);
 
-  // arms: shoulder → elbow → forearm
+  // arms: shoulder → elbow → forearm → hand
   const mkArm = (side: 1 | -1) => {
     const shoulder = new THREE.Group();
-    shoulder.position.set(0.21 * side, 0.5, 0.03);
+    shoulder.position.set(0.23 * side, 0.62, 0.03);
     torsoG.add(shoulder);
-    const upper = capsule(0.055, 0.24, bodyMat);
+    const upper = capsule(0.055, 0.24, shirtMat);
     upper.position.y = -0.15;
     shoulder.add(upper);
     const elbow = new THREE.Group();
     elbow.position.y = -0.3;
     shoulder.add(elbow);
-    const fore = capsule(0.05, 0.22, bodyMat);
+    const fore = capsule(0.05, 0.22, skinMat);
     fore.position.y = -0.14;
     elbow.add(fore);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), skinMat);
+    hand.position.y = -0.29;
+    elbow.add(hand);
     return { shoulder, elbow };
   };
   const armL = mkArm(-1);
   const armR = mkArm(1);
 
-  // phone in hand for the caller
   if (variant === 2) {
     const phone = box(0.07, 0.16, 0.03, darkMat);
     phone.position.set(0, -0.3, 0.03);
     armR.elbow.add(phone);
   }
 
-  // floating stress mark above the head
+  // stress mark → calm ring
   const mark = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.16, 0.05), redGlowMat(1.6));
-  mark.position.set(0.16, 1.62, 0);
+  mark.position.set(0.18, 1.98, 0);
   const dot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), redGlowMat(1.6));
-  dot.position.set(0.16, 1.48, 0);
-  g.add(mark, dot);
+  dot.position.set(0.18, 1.84, 0);
+  const calmMat = new THREE.MeshBasicMaterial({ color: 0xfff0ee, transparent: true, opacity: 0 });
+  const calmRing = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.014, 8, 24), calmMat);
+  calmRing.position.set(0, 2.0, 0);
+  g.add(mark, dot, calmRing);
 
-  const setPose = (t: number, relax: number) => {
+  const setPose = (t: number, relax: number, faceYaw: number) => {
     const r = relax;
-    const s = 1 - r;
-    // torso: hunched forward → leaning back
+    const sIdle = 1 - r;
     torsoG.rotation.x =
-      lerp(0.44, -0.14, r) + Math.sin(t * (7 + seed)) * 0.012 * s + Math.sin(t * 1.1 + seed) * 0.02 * r;
-    // head: down and shaking → up, easy
-    headG.rotation.x = lerp(0.3, -0.08, r);
-    headG.rotation.y = Math.sin(t * (4.5 + seed)) * 0.09 * s + Math.sin(t * 0.7 + seed) * 0.05 * r;
+      lerp(0.42, -0.16, r) + Math.sin(t * (7 + seed)) * 0.012 * sIdle + Math.sin(t * 1.1 + seed) * 0.02 * r;
+    headG.rotation.x = lerp(0.28, -0.1, r);
+    // stressed: head shakes at the screen — relaxed: turns to face the room/camera
+    headG.rotation.y =
+      Math.sin(t * (4.5 + seed)) * 0.09 * sIdle + faceYaw * r + Math.sin(t * 0.7 + seed) * 0.04 * r;
 
     if (variant === 0) {
-      // typing hard → hands resting
       armL.shoulder.rotation.x = lerp(-1.05, -0.35, r);
       armR.shoulder.rotation.x = lerp(-1.12, -0.35, r);
-      armL.elbow.rotation.x = lerp(-0.55, -0.3, r) + Math.sin(t * 11 + seed) * 0.1 * s;
-      armR.elbow.rotation.x = lerp(-0.5, -0.3, r) + Math.cos(t * 12 + seed) * 0.1 * s;
+      armL.elbow.rotation.x = lerp(-0.55, -0.3, r) + Math.sin(t * 11 + seed) * 0.1 * sIdle;
+      armR.elbow.rotation.x = lerp(-0.5, -0.3, r) + Math.cos(t * 12 + seed) * 0.1 * sIdle;
     } else if (variant === 1) {
-      // left hand types, right hand pressed to the head → both at ease
       armL.shoulder.rotation.x = lerp(-1.05, -0.35, r);
-      armL.elbow.rotation.x = lerp(-0.5, -0.3, r) + Math.sin(t * 10 + seed) * 0.09 * s;
+      armL.elbow.rotation.x = lerp(-0.5, -0.3, r) + Math.sin(t * 10 + seed) * 0.09 * sIdle;
       armR.shoulder.rotation.x = lerp(-2.15, -0.4, r);
       armR.shoulder.rotation.z = lerp(-0.55, -0.05, r);
       armR.elbow.rotation.x = lerp(-1.95, -0.35, r);
     } else {
-      // phone at the ear → phone set down
       armL.shoulder.rotation.x = lerp(-1.0, -0.35, r);
       armL.elbow.rotation.x = lerp(-0.5, -0.3, r);
       armR.shoulder.rotation.x = lerp(-2.3, -0.45, r);
@@ -187,11 +233,21 @@ function makePerson(variant: number, seed: number): Person {
       armR.elbow.rotation.x = lerp(-2.05, -0.4, r);
     }
 
-    // stress mark blinks away as calm arrives
-    const blink = (0.8 + Math.sin(t * 6 + seed) * 0.5) * s;
+    // expression morph
+    const browTilt = lerp(0.45, -0.14, r);
+    browL.rotation.z = -browTilt;
+    browR.rotation.z = browTilt;
+    eyeL.scale.y = eyeR.scale.y = lerp(0.55, 1, r);
+    frown.scale.setScalar(Math.max(0.001, 1 - r));
+    smile.scale.setScalar(Math.max(0.001, r));
+
+    // stress mark blinks away; calm ring settles in
+    const blink = (0.8 + Math.sin(t * 6 + seed) * 0.5) * sIdle;
     (mark.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.6 * blink;
     (dot.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.6 * blink;
-    mark.visible = dot.visible = s > 0.03;
+    mark.visible = dot.visible = sIdle > 0.03;
+    calmMat.opacity = 0.75 * r;
+    calmRing.rotation.y = t * 0.8;
   };
 
   return { group: g, setPose };
@@ -627,17 +683,18 @@ export default function GsaStory3D({
       legR.position.set(1.15, 0.5, 0);
       dg.add(legL, legR);
       // monitor + keyboard
-      const mon = box(0.85, 0.55, 0.05, shellMat(0x121319));
-      mon.position.set(0.05, 1.55, 0.12);
+      const mon = box(0.85, 0.5, 0.05, shellMat(0x121319));
+      mon.position.set(0.5, 1.5, 0.12);
+      mon.rotation.y = -0.2;
       dg.add(mon);
       const monStand = new THREE.Mesh(
         new THREE.CylinderGeometry(0.025, 0.025, 0.25, 8),
         shellMat(0x2a2d38)
       );
-      monStand.position.set(0.05, 1.16, 0.12);
+      monStand.position.set(0.5, 1.14, 0.12);
       dg.add(monStand);
       const kb = box(0.6, 0.03, 0.2, shellMat(0x22252f));
-      kb.position.set(0.05, 1.06, -0.25);
+      kb.position.set(-0.3, 1.06, -0.25);
       dg.add(kb);
       // screen glow toward the operator
       const glow = new THREE.Mesh(
@@ -649,11 +706,12 @@ export default function GsaStory3D({
           side: THREE.DoubleSide,
         })
       );
-      glow.position.set(0.05, 1.55, 0.085);
+      glow.position.set(0.5, 1.5, 0.085);
+      glow.rotation.y = -0.2;
       dg.add(glow);
       // operator
       const person = makePerson(i, i * 2.1);
-      person.group.position.set(0.05, 0, -0.95);
+      person.group.position.set(-0.3, 0, -0.95);
       dg.add(person.group);
       people.push(person);
       // soft ground shadow
@@ -850,7 +908,7 @@ export default function GsaStory3D({
 
       // people unwind
       const relax = smooth(0.6, 0.85, progress);
-      people.forEach((person) => person.setPose(t, relax));
+      people.forEach((person, i) => person.setPose(t, relax, -DESKS[i].rotY));
 
       // core awakens
       const coreP = smooth(0.62, 0.82, progress);
