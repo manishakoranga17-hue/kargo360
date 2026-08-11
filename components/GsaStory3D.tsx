@@ -9,7 +9,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { registerGsap, ScrollTrigger } from "@/lib/gsap";
 
-const INK = 0x0b0b10;
+const INK = 0x0a0a0c;
 const SHELL = 0x14161d;
 const RED = 0xff2f45;
 
@@ -628,12 +628,12 @@ export default function GsaStory3D({
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
     renderer.setClearColor(INK);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.0;
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(INK, 0.04);
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environmentIntensity = 0.42;
+    scene.environmentIntensity = 0.32;
     const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 80);
 
     const composer = new EffectComposer(renderer);
@@ -643,8 +643,8 @@ export default function GsaStory3D({
     composer.addPass(new OutputPass());
 
     /* --- lights --- */
-    scene.add(new THREE.AmbientLight(0x2a2c38, 2.1));
-    scene.add(new THREE.HemisphereLight(0x8a8fa8, 0x0b0b10, 0.55));
+    scene.add(new THREE.AmbientLight(0x2a2a2e, 2.0));
+    scene.add(new THREE.HemisphereLight(0x9a9aa0, 0x0a0a0c, 0.4));
     const key = new THREE.DirectionalLight(0xffffff, 1.1);
     key.position.set(6, 10, 8);
     scene.add(key);
@@ -656,7 +656,7 @@ export default function GsaStory3D({
     scene.add(coreLight);
 
     /* --- floor --- */
-    const grid = new THREE.GridHelper(70, 70, 0x2a2a32, 0x16161c);
+    const grid = new THREE.GridHelper(70, 70, 0x1b1b1f, 0x111114);
     grid.position.y = 0;
     scene.add(grid);
 
@@ -1024,6 +1024,14 @@ export default function GsaStory3D({
     <div ref={wrapRef} className="relative h-[560vh] bg-ink-950">
       <div className="sticky top-0 h-screen overflow-hidden">
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-ink-950 to-transparent"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-ink-950 to-transparent"
+        />
 
         {/* problem / solution pills */}
         <div className="pointer-events-none absolute inset-0">
